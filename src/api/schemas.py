@@ -26,8 +26,8 @@ class SystemInfoResponse(BaseModel):
 
 
 class IngestRequest(BaseModel):
-    source: str = Field(default="YAHOO", description="YAHOO, DELTA_EXCHANGE, or LOCAL_ARCHIVE")
-    symbol: str = Field(default="GC=F", description="Instrument symbol (GC=F, XAUUSD)")
+    source: str = Field(default="DUKASCOPY", description="DUKASCOPY, YAHOO, DELTA_EXCHANGE, or LOCAL_ARCHIVE")
+    symbol: str = Field(default="XAUUSD", description="Instrument symbol (XAUUSD, GC=F, PAXGUSDT)")
     timeframe: str = Field(default="1h", description="1m, 5m, 15m, 30m, 1h, 4h, 1d")
     range_str: Optional[str] = Field(default="1mo", description="Range string (e.g. 5d, 1mo, 1y)")
     start_time: Optional[datetime] = None

@@ -7,67 +7,69 @@
 
 The Gold AI Trading Agent is designed as a modular, decoupled quantitative research and trading system. It enforces strict separation between statistical computation, AI hypothesis generation, deterministic risk verification, and exchange execution.
 
-```
+```text
 +---------------------------------------------------------------------------------------------------+
-|                                      DATA INGESTION & PIPELINE                                    |
-|  +--------------------+   +-----------------------+   +--------------------+                      |
-|  | Yahoo Finance GC=F |   | Delta Exchange REST/WS|   | Local Tick/Parquet |                      |
-|  +---------+----------+   +-----------+-----------+   +---------+----------+                      |
-|            |                          |                         |                                 |
-|            +--------------------------+-------------------------+                                 |
-|                                       v                                                           |
-|                          +------------------------+                                               |
-|                          | Raw Storage (data/raw) | (Immutable)                                   |
-|                          +-----------+------------+                                               |
-|                                       v                                                           |
-|                          +------------------------+                                               |
-|                          | Data Validation Engine | --> Quality Reports & Quarantined Data        |
-|                          +-----------+------------+                                               |
-|                                       v                                                           |
-|                          +------------------------+                                               |
-|                          |  Normalized Parquet    | (data/normalized, data/timeframe)             |
-|                          +-----------+------------+                                               |
-+---------------------------------------|-----------------------------------------------------------+
-                                        v
+|                                      DATA INGESTION & PIPELINE (Phase 1)                          |
+|  +------------------------+   +-----------------------+   +---------------------+                 |
+|  | Dukascopy XAUUSD       |   | Yahoo Finance GC=F    |   | Delta Exchange REST |                 |
+|  | (Primary Research Data)|   | (Secondary/Futures)   |   | (Execution Venue)   |                 |
+|  +-----------+------------+   +-----------+-----------+   +----------+----------+                 |
+|              |                            |                          |                            |
+|              +----------------------------+--------------------------+                            |
+|                                           v                                                       |
+|                              +------------------------+                                           |
+|                              | Raw Storage (data/raw) | (Immutable, Checksummed)                  |
+|                              +-----------+------------+                                           |
+|                                           v                                                       |
+|                              +------------------------+                                           |
+|                              | Data Quality Engine    | --> Quality Reports & Quarantined Data    |
+|                              +-----------+------------+                                           |
+|                                           v                                                       |
+|                              +------------------------+                                           |
+|                              |  Normalized Parquet    | (data/normalized, data/timeframe)         |
+|                              +-----------+------------+                                           |
++-------------------------------------------|-------------------------------------------------------+
+                                            v
 +---------------------------------------------------------------------------------------------------+
-|                                      QUANTITATIVE ANALYTICS & REGIME                              |
+|                                 QUANTITATIVE ANALYTICS & REGIME (Phase 1)                         |
 |  +--------------------+   +-----------------------+   +--------------------+                      |
 |  | Technical Features |   | Multi-Timeframe Sync  |   | Market Regime      |                      |
-|  | (ATR, RSI, BB,...) |   | (1M -> 5M -> 1H -> 4H)|   | (Trend, Range, Vol)|                      |
-|  +--------------------+   +-----------------------+   +--------------------+                      |
-+---------------------------------------|-----------------------------------------------------------+
-                                        v
+|  | (ATR, RSI, BB,...) |   | (1m -> 5m, 15m, 1h, 4h|   | (Trend, Range, Vol,|                      |
+|  +--------------------+   |  and 1d UTC bars)     |   |  Abnormal Spikes)  |                      |
+|                           +-----------------------+   +--------------------+                      |
++-------------------------------------------|-------------------------------------------------------+
+                                            v
 +---------------------------------------------------------------------------------------------------+
-|                                  AI STRATEGY FACTORY (PHASE 2)                                    |
+|                             AI STRATEGY FACTORY & VALIDATION (Phase 2)                            |
 |  +--------------------+   +-----------------------+   +--------------------+                      |
-|  | Market Analyst     |   | Strategy Researcher   |   | Performance Analyst|                      |
-|  | (Structure/Regime) |   | (Hypothesis Generator)|   | (Failure Diagnosis)|                      |
-|  +--------------------+   +-----------+-----------+   +--------------------+                      |
-+---------------------------------------|-----------------------------------------------------------+
-                                        v
+|  | Market Analyst     |   | Strategy Researcher   |   | Robustness Suite   |                      |
+|  | (Structure/Regime) |   | (Hypothesis Generator)|   | (WFA, Monte Carlo, |                      |
+|  +--------------------+   +-----------+-----------+   |  OOS Gate, Pine)   |                      |
+|                                                       +--------------------+                      |
++-------------------------------------------|-------------------------------------------------------+
+                                            v
 +---------------------------------------------------------------------------------------------------+
-|                                  DETERMINISTIC BACKTESTER & VALIDATOR                             |
+|                             DETERMINISTIC BACKTESTING ENGINE (Phase 1)                            |
 |  +--------------------+   +-----------------------+   +--------------------+                      |
-|  | Bar-by-Bar Matcher |   | Realism Model         |   | Validation Suite   |                      |
-|  | (Vector / Event)   |   | (Slippage, Spread, Fee|   | (WFA, Monte Carlo, |                      |
-|  +--------------------+   +-----------------------+   |  OOS Gate, Stress) |                      |
-|                                                       +---------+----------+                      |
-+-----------------------------------------------------------------|---------------------------------+
-                                                                  v
+|  | Bar-by-Bar Matcher |   | Realism Cost Engine   |   | Quantitative       |                      |
+|  | (Zero Lookahead)   |   | (Spread, Slip, Fees)  |   | Metrics Engine     |                      |
+|  +--------------------+   +-----------------------+   +--------------------+                      |
++-------------------------------------------|-------------------------------------------------------+
+                                            v
 +---------------------------------------------------------------------------------------------------+
-|                                  DETERMINISTIC RISK & EXECUTION PIPELINE                          |
+|                             DETERMINISTIC RISK & EXECUTION PIPELINE                               |
 |                                                                                                   |
 |     Strategy Signal                                                                               |
 |            |                                                                                      |
 |            v                                                                                      |
 |   +-------------------+       REJECTED                                                            |
 |   | Deterministic     | -------------------> [ Signal Dropped / Audit Log ]                       |
-|   | Risk Engine       |                                                                           |
+|   | Risk Engine       | (Phase 3)                                                                 |
 |   +--------+----------+                                                                           |
 |            | APPROVED                                                                             |
 |            v                                                                                      |
 |   +-------------------+                                                                           |
-|   | Kill Switch Gate  | ===> EMERGENCY HALT IF DRAWDOWN / LATENCY / SPREAD BREACHED               |
+|   | Kill Switch Gate  | ===> EMERGENCY HALT IF DRAWDOWN / LATENCY / SPREAD BREACHED (Phase 3)     |
 |   +--------+----------+                                                                           |
 |            | PASSED                                                                               |
 |            v                                                                                      |
@@ -79,7 +81,7 @@ The Gold AI Trading Agent is designed as a modular, decoupled quantitative resea
 |            | (Phase 3)                          | (Phase 4)                                       |
 |            v                                    v                                                 |
 |   +-------------------+                +-------------------+                                      |
-|   | Paper Trading Sim |                | Delta Adapter     | (LIVE_TRADING_ENABLED=false)         |
+|   | Paper Trading Sim |                | Delta Adapter     | (LIVE_TRADING_ENABLED=false default) |
 |   | & Trade Journal   |                | Exchange Client   |                                      |
 |   +-------------------+                +-------------------+                                      |
 +---------------------------------------------------------------------------------------------------+
@@ -87,137 +89,201 @@ The Gold AI Trading Agent is designed as a modular, decoupled quantitative resea
 
 ---
 
-## 2. MODULAR BOUNDARIES & PACKAGES
+## 2. SEPARATION OF INSTRUMENT DOMAINS
 
-The repository follows clean layered architecture with explicit interfaces:
+A foundational invariant of this platform is that **different Gold instruments must never be conflated or silently substituted**.
 
-```
+| Instrument Domain | Primary Symbol | Source Venue | Role & Characteristics | Phase Introduced |
+| :--- | :--- | :--- | :--- | :--- |
+| **Primary Research Gold** | `XAUUSD` | Dukascopy | Spot Gold (1 oz USD). Continuous high-liquidity interbank pricing. Free tick/minute history. Primary baseline for quant research. | Phase 1 |
+| **Secondary Research Gold** | `GC=F` | COMEX / Yahoo Finance | Continuous COMEX Gold Futures (100 oz contract). Used for macro cross-validation and futures market structural comparison. | Phase 1 |
+| **Execution Gold (Derivatives)**| `PAXGUSDT` / `XAUUSD_PERP` | Delta Exchange | Crypto-collateralized gold perpetual/futures contracts. Quotes and settles in USDT; tick size, multiplier, fees, and funding mechanism differ from spot gold. | Discovered in Phase 1, Executed in Phase 3 & 4 |
+
+### Instrument Provenance Rule
+All storage paths, database rows, cache keys, and backtest configurations **MUST** record the tuple `(source, instrument, timeframe)`. An algorithm evaluated on `(Dukascopy, XAUUSD)` must never be reported as evaluated on `(Delta, PAXGUSDT)` or `(Yahoo, GC=F)`.
+
+---
+
+## 3. MODULAR BOUNDARIES & PACKAGE RESPONSIBILITIES
+
+```text
 src/
-├── core/                   # System configuration, logging, events, exceptions, base types
+├── core/                   # [Phase 1] System configuration, logging, events, exceptions, base types
 │   ├── config.py           # Pydantic BaseSettings (env vars, secrets, thresholds)
 │   ├── logger.py           # Structured JSON / console logging with redaction
-│   ├── events.py           # Event bus for internal messaging and audit log
+│   ├── events.py           # In-process event bus for messaging and audit log
 │   └── constants.py        # Canonical symbols, timeframes, market sessions
 │
-├── data/                   # Data Ingestion, Cleaning, and Storage
-│   ├── sources/            # Ingestion connectors (Yahoo, Delta REST/WS, CSV)
-│   ├── validation/         # Quality checks (OHLC logic, gaps, spikes, timestamps)
-│   ├── storage/            # Parquet file managers, metadata registry
-│   └── resampler.py        # Multi-timeframe resampling (1m -> 5m, 15m, 1h, 4h, 1d)
+├── data/                   # [Phase 1] Data Ingestion, Cleaning, and Storage
+│   ├── sources/            # Ingestion connectors (Dukascopy primary, Yahoo secondary, Delta, Local)
+│   ├── validation/         # Quality checks (NaN, OHLC logic, gaps, spikes, monotonic order)
+│   ├── storage/            # Parquet file managers, metadata registry with SHA-256
+│   └── resampler.py        # Multi-timeframe resampling (1m -> 5m, 15m, 30m, 1h, 4h, 1d)
 │
-├── quant/                  # Quantitative Analysis & Features
-│   ├── indicators/         # Deterministic indicators (ATR, RSI, EMA, BB, MACD, etc.)
-│   ├── regime/             # Market regime classifier (Trending, Ranging, High Vol, etc.)
-│   └── sessions.py         # Gold market session identification (Asian, London, NY)
+├── quant/                  # [Phase 1] Quantitative Analysis & Features
+│   ├── indicators/         # Deterministic indicators (ATR, RSI, EMA, BB, MACD, ADX, Donchian)
+│   ├── regime/             # Market regime classifier (Trending, Ranging, High Vol, Abnormal)
+│   └── sessions.py         # Gold market session identification (Asian, London, NY, Overlap)
 │
-├── backtest/               # Deterministic Backtesting Engine
-│   ├── engine.py           # Bar-by-bar matching engine with zero lookahead
-│   ├── execution.py        # Fill models: spread, slippage, commission, funding
-│   ├── metrics.py          # Complete quantitative performance metrics
+├── backtest/               # [Phase 1] Deterministic Backtesting Engine
+│   ├── engine.py           # Bar-by-bar matching engine with zero lookahead (close & next open fills)
+│   ├── execution.py        # Fill models: spread, slippage, commission, conservative intra-bar SL/TP
+│   ├── metrics.py          # Complete quantitative performance metrics (Sharpe, Sortino, MaxDD, etc.)
 │   ├── position.py         # Position tracking, margin, unrealized/realized P&L
 │   └── types.py            # Backtest orders, fills, trade log definitions
 │
-├── validation/             # Overfitting & Robustness Engine (Phase 2)
+├── strategy/               # [Phase 1] Strategy Definition and Repository
+│   ├── base.py             # BaseStrategy abstract base class
+│   ├── parameters.py       # Parameter schema, ranges, mutation rules
+│   ├── registry.py         # Versioned strategy catalogue
+│   └── strategies/         # Concrete reference implementations (EMA, ATR Breakout, RSI Mean Rev)
+│
+├── validation/             # [Phase 2] Overfitting & Robustness Engine
 │   ├── walk_forward.py     # Rolling window walk-forward analyzer
 │   ├── monte_carlo.py      # Resampling, permutations, ruin probability
 │   ├── out_of_sample.py    # Holdout partition testing gate
 │   └── scoring.py          # Composite strategy robustness score
 │
-├── strategy/               # Strategy Definition and Repository
-│   ├── base.py             # BaseStrategy abstract base class
-│   ├── parameters.py       # Parameter schema, ranges, mutation rules
-│   ├── registry.py         # Versioned strategy catalogue
-│   └── strategies/         # Concrete strategy implementations
-│
-├── ai/                     # AI Strategy Factory & Agents (Phase 2)
+├── ai/                     # [Phase 2] AI Strategy Factory & Agents
+│   ├── provider.py         # LLM Provider abstraction (Ollama primary, Gemini secondary)
 │   ├── analyst.py          # Market structure and regime reasoning
 │   ├── researcher.py       # Strategy hypothesis generator
 │   ├── evaluator.py        # Performance & failure diagnosis agent
-│   └── pine_transpiler.py  # Pine Script v5 generator
+│   └── pine_transpiler.py  # Pine Script v5 generator with parity verification
 │
-├── risk/                   # Deterministic Risk Management (Phase 3)
-│   ├── engine.py           # Absolute risk rules (max daily loss, max exposure)
+├── risk/                   # [Phase 3] Deterministic Risk Management
+│   ├── engine.py           # Absolute risk rules (max daily loss, max exposure, drawdown limits)
 │   ├── sizing.py           # Position sizing (fixed fractional, volatility-adjusted)
 │   └── kill_switch.py      # Emergency kill switch triggers & audit
 │
-├── execution/              # Execution & Exchange Adapters (Phase 3 & 4)
+├── execution/              # [Phase 3 & 4] Execution & Exchange Adapters
 │   ├── base.py             # ExchangeAdapter abstract interface
-│   ├── paper.py            # Real-time simulated paper trading engine
-│   └── delta/              # Delta Exchange REST and WebSocket client
+│   ├── paper.py            # [Phase 3] Real-time simulated paper trading engine
+│   └── delta/              # [Phase 3 & 4] Delta Exchange REST and WebSocket client
 │
-├── database/               # Relational Persistence
-│   ├── connection.py       # Async SQLAlchemy session factory & engine
-│   ├── models/             # SQLAlchemy ORM schemas
+├── database/               # [Phase 1 Foundation] Relational Persistence
+│   ├── connection.py       # Async SQLAlchemy session factory & engine (SQLite / PostgreSQL)
+│   ├── models/             # SQLAlchemy ORM schemas with explicit phase ownership
 │   └── repository.py       # Clean repository pattern for queries
 │
-└── api/                    # FastAPI HTTP & WebSocket Interface
-    ├── routes/             # REST endpoints (data, backtest, strategies, risk)
-    ├── websockets/         # Real-time streaming for frontend dashboard
+└── api/                    # [Phase 1 Foundation] FastAPI HTTP Interface
+    ├── routes/             # REST endpoints (health, system, data, strategies, backtest)
+    ├── websockets/         # [Phase 3] Real-time streaming for frontend dashboard
     └── schemas.py          # Pydantic request/response schemas
 ```
 
 ---
 
-## 3. CORE SUB-SYSTEM SPECIFICATIONS
+## 4. CORE SUB-SYSTEM SPECIFICATIONS
 
-### 3.1 Data Pipeline
-- **Raw Data Invariant:** Every downloaded payload is written to `data/raw/{source}/{instrument}/{timestamp}.json` or `.parquet` prior to any transformation.
-- **Normalization Standard:** All data frames conform to:
-  `[timestamp (UTC int64 ns), open (float64), high (float64), low (float64), close (float64), volume (float64), source (str), instrument (str)]`.
-- **Validation Suite:** Detects:
-  - Non-monotonic timestamps or duplicates
-  - High < Low, High < Open, High < Close, Low > Open, Low > Close
-  - Missing candle intervals (gaps based on market open/close calendar)
-  - Price jumps $> 5\sigma$ relative to trailing 20-bar ATR
+### 4.1 Data Pipeline
+- **Raw Data Invariant:** Every downloaded payload is written to `data/raw/{source}/{instrument}/{filename}` in immutable raw format prior to any transformation.
+- **Normalization Standard:** All data frames conform to the strict schema:
+  `[timestamp (UTC datetime64[ns, UTC]), open (float64), high (float64), low (float64), close (float64), volume (float64), source (str), instrument (str)]`.
+- **Validation Engine:** Evaluates:
+  - Non-monotonic timestamps or duplicate rows.
+  - Geometry: `high < low`, `high < open`, `high < close`, `low > open`, `low > close`.
+  - Non-positive or NaN values in OHLC bars.
+  - Price jumps $> 5\sigma$ relative to trailing 20-bar ATR.
+  - Interval gaps based on market session calendar.
+- **Resampling:** Left-closed, left-labeled intervals (`[t, t + Δt)` labeled as `t`) in strict UTC. Zero lookahead. Base 1m data is used when available, but higher timeframe data may be ingested directly.
 
-### 3.2 Backtesting Execution Model
-- **Fill Semantics:**
-  - Signals generated at bar $t$ close can only execute on bar $t$ close (with modeled adverse slip) or bar $t+1$ open.
-  - Intra-bar Stop Loss and Take Profit evaluation assumes conservative path traversal: if both SL and TP price levels are within the bar range $[Low, High]$, the Stop Loss is assumed to hit first.
-- **Cost Modeling:**
-  - Slippage: Modelled as base tick slippage plus volatility-proportional slippage.
-  - Spread: Half-spread subtracted on buy, half-spread added on sell.
-  - Commission: Maker/taker fee schedules matching Delta Exchange ($0.02\%$ maker, $0.05\%$ taker).
+### 4.2 Backtesting Execution Model
+- **Zero Lookahead:** Features, indicators, and signal logic at bar $t$ must only reference bar $t$ and historical bars $[0, \dots, t]$.
+- **Execution Timing Models:**
+  - Bar Close Fill: Signal generated at bar $t$ close executes at bar $t$ close with half-spread and adverse slippage.
+  - Next Bar Open Fill: Signal generated at bar $t$ close executes at bar $t+1$ open.
+- **Conservative Intra-Bar Path Traversal:**
+  - When a bar's $[Low_t, High_t]$ range crosses both the active position's Stop Loss and Take Profit levels, the engine conservatively models that the **Stop Loss triggered first**.
+- **Realistic Cost Modeling:**
+  - Spread: Half-spread added to buy price, subtracted from sell price.
+  - Slippage: Modeled as base tick slippage plus volatility-scaled adverse execution.
+  - Commissions: Explicit maker ($0.02\%$) and taker ($0.05\%$) schedules matching exchange terms.
 
-### 3.3 Risk Engine Invariant
-The Risk Engine evaluates 8 mandatory deterministic gates before any order reaches execution:
-1. `DAILY_LOSS_LIMIT`: Daily realized + unrealized drawdown $< \text{MaxDailyLossPercent}$.
-2. `PORTFOLIO_DRAWDOWN`: Peak-to-trough equity drawdown $< \text{MaxPortfolioDrawdownPercent}$.
-3. `MAX_CONSECUTIVE_LOSSES`: Recent loss streak $< \text{MaxLossStreak}$.
-4. `POSITION_SIZE_CAP`: New order size does not exceed max risk per trade ($1.0\%$ default).
-5. `MAX_OPEN_POSITIONS`: Concurrent active positions $\le \text{MaxConcurrentPositions}$ (default 1 for Gold).
-6. `MIN_RISK_REWARD`: Reward-to-Risk ratio $\ge 1.5$.
-7. `SPREAD_FILTER`: Current bid-ask spread $\le 3\times$ median spread.
-8. `KILL_SWITCH_STATUS`: Global kill switch state is `ARMED_NORMAL`.
+### 4.3 Metrics Engine
+- **Standard Sortino Ratio:** Downside semi-deviation is calculated across the full sample of $N$ returns with non-negative returns clamped to zero, avoiding sample size bias from filtering only negative returns.
+- **Profit Factor:** $\frac{\text{Gross Profit}}{\text{Gross Loss}}$, separating gross trading gains from losses before fee attribution.
+- **Drawdown:** Comprehensive tracking of Peak-to-Trough equity drawdown (% and USD) and duration in bars.
 
 ---
 
-## 4. PHASE ROLLOUT ROADMAP
+## 5. INFRASTRUCTURE & DEPENDENCY BOUNDARIES
 
-```
-Phase 1: Foundation + Data + Backtesting (Current Target)
-  -> Repository, Constitution, Architecture, Docker
-  -> Ingestion (Yahoo GC=F, Delta REST, Local)
-  -> Validation & Parquet storage
-  -> Technical Indicators & Regimes
-  -> Deterministic Backtester & Performance Metrics Engine
-  -> FastAPI endpoints & Pytest suite
-  -> Phase 1 Completion Report
+### 5.1 Redis Phase Boundary
+- **Phase 1 Status:** **Zero Redis Dependency.** Phase 1 is purely a data ingestion, quantitative research, backtesting, and REST API platform. Redis is not imported or required for any Phase 1 functionality.
+- **Phase 3 Introduction:** Redis 7 is introduced in Phase 3 strictly for:
+  - Real-time market tick caching.
+  - Paper trading order book pub/sub.
+  - WebSocket streaming state management for the React dashboard.
+- **Docker Compose Configuration:** In Phase 1, backend service startup must not be gated by Redis health checks.
 
-Phase 2: AI Strategy Factory + Validation
-  -> Multi-Agent System (Market Analyst, Strategy Researcher, Performance Analyst)
-  -> Walk-Forward & Monte Carlo Engine
-  -> Overfitting & Robustness Scoring
-  -> Pine Script v5 Generator
+### 5.2 AI & LLM Boundaries
+- **Phase 1:** Zero LLM dependencies. All Phase 1 modules (indicators, backtest, regimes, metrics) are 100% deterministic Python/NumPy code.
+- **Phase 2:** AI components operate via the `LLMProvider` abstraction. Default provider is local/self-hosted (Ollama); secondary provider is Gemini free-tier.
+- **Veto & Security Gate:** Under no circumstances may an AI agent:
+  - Directly place orders or interact with exchange APIs.
+  - Access private keys, secrets, or API credentials.
+  - Override deterministic risk management rules or kill switches.
 
-Phase 3: Paper Trading + Dashboard + Risk
-  -> Real-Time Delta WebSocket & Paper Engine
-  -> Deterministic Risk Engine & Kill Switches
-  -> React 18 + Vite + Tailwind Dashboard
-  -> Trade Journal & System Health
+---
 
-Phase 4: Delta Live Execution + Production
-  -> Authenticated Delta Exchange API
-  -> Order Reconciliation & Guardrails
-  -> Production Hardening & VPS Deployment
+## 6. DATABASE SCHEMA & PHASE OWNERSHIP
+
+The database schema defines entities supporting the complete 4-phase roadmap. However, functional availability is partitioned as follows:
+
+| Table Name | Phase Owner | Operational Status in Phase 1 |
+| :--- | :--- | :--- |
+| `instruments` | Phase 1 | **Active** (Canonical Gold instrument catalogue) |
+| `market_data_metadata` | Phase 1 | **Active** (Registry of ingested datasets & quality scores) |
+| `strategies` | Phase 1 | **Active** (Strategy registry records) |
+| `strategy_versions` | Phase 1 | **Active** (Version history of strategy definitions) |
+| `strategy_parameters` | Phase 1 | **Active** (Registered parameter schemas) |
+| `backtests` | Phase 1 | **Active** (Backtest runs and summary performance) |
+| `backtest_trades` | Phase 1 | **Active** (Individual simulated trade execution logs) |
+| `market_regimes` | Phase 1 | **Active** (Historical market regime classifications) |
+| `system_events` | Phase 1 | **Active** (System audit and lifecycle event log) |
+| `validation_results` | Phase 2 | *Schema provisioned; populated during Phase 2 validation runs* |
+| `walk_forward_results` | Phase 2 | *Schema provisioned; populated during Phase 2 WFA* |
+| `monte_carlo_results` | Phase 2 | *Schema provisioned; populated during Phase 2 Monte Carlo* |
+| `signals` | Phase 2 / 3 | *Schema provisioned; active in live/paper signal generation* |
+| `agent_decisions` | Phase 2 | *Schema provisioned; stores AI hypothesis generation logs* |
+| `paper_trades` | Phase 3 | *Schema provisioned; populated during Phase 3 paper trading* |
+| `positions` | Phase 3 | *Schema provisioned; real-time position tracking in Phase 3* |
+| `risk_events` | Phase 3 | *Schema provisioned; risk gate rejections & kill switch events* |
+| `live_trades` | Phase 4 | *Schema provisioned; live exchange execution audit log* |
+
+---
+
+## 7. 4-PHASE ROADMAP & SUCCESS CRITERIA
+
+```text
+Phase 1: Foundation + Data Ingestion + Deterministic Backtester (CURRENT REWORK)
+  ├── Canonical Governance: PROJECT_CONSTITUTION.md, ARCHITECTURE.md, PHASE_1_SPEC.md, ADRs
+  ├── Ingestion: Dukascopy XAUUSD (primary), Yahoo GC=F (secondary), Delta public metadata
+  ├── Data Quality Engine: 9 corruption checks, NaN drop, quality reporting
+  ├── Deterministic Indicators & Gold Session / Market Regime classification
+  ├── Backtest Engine: Bar close & next open fills, conservative SL/TP tie-breaker, realistic costs
+  ├── Institutional Metrics: Sharpe, standard Sortino, Gross Profit Factor, Drawdown, Expectancy
+  ├── FastAPI Endpoints & >= 85% Unit/Integration Test Coverage
+  └── Output: Phase 1 Forensic Certification Report
+
+Phase 2: AI Strategy Factory + Robustness Validation
+  ├── Multi-Agent AI System: Market Analyst, Strategy Researcher, Performance Evaluator
+  ├── LLM Provider Abstraction: Local Ollama primary, Gemini secondary
+  ├── Validation Engine: Walk-Forward Analysis, Monte Carlo simulations, Out-of-Sample gate
+  ├── Pine Script v5 Generator with strict <= 5% execution parity gate
+  └── Output: Validated Strategy Catalogue & Phase 2 Certification Report
+
+Phase 3: Paper Trading + Real-Time Risk + Dashboard
+  ├── Real-time Delta WebSocket streaming & Paper Trading Engine
+  ├── Deterministic Risk Engine: 8 mandatory gates & Kill Switch circuit breaker
+  ├── Redis 7 caching & pub/sub bus
+  ├── React 18 + TypeScript + Vite institutional trading dashboard
+  └── Output: 4-week paper trading certification & Phase 3 Report
+
+Phase 4: Delta Live Execution + Production Deployment
+  ├── Authenticated Delta Exchange integration (HMAC SHA-256)
+  ├── Real-time order & position reconciliation daemons
+  ├── Hard-locked live trading gate (default LIVE_TRADING_ENABLED=false)
+  └── Output: Production VPS Deployment & Final Operations Manual
 ```

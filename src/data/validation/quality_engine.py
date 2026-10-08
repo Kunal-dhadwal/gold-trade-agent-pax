@@ -24,6 +24,7 @@ class QualityReport:
     zero_negative_volumes: int
     abnormal_price_spikes: int
     gaps_detected: int
+    nan_inf_bars: int = 0
     date_range_start: Optional[str] = None
     date_range_end: Optional[str] = None
     issues_summary: List[Dict[str, Any]] = field(default_factory=list)
@@ -39,6 +40,7 @@ class QualityReport:
             "duplicate_timestamps": self.duplicate_timestamps,
             "out_of_order_timestamps": self.out_of_order_timestamps,
             "invalid_ohlc_bars": self.invalid_ohlc_bars,
+            "nan_inf_bars": self.nan_inf_bars,
             "zero_negative_volumes": self.zero_negative_volumes,
             "abnormal_price_spikes": self.abnormal_price_spikes,
             "gaps_detected": self.gaps_detected,
@@ -59,6 +61,7 @@ class QualityReport:
             "## Metric Checks Breakdown",
             f"| Inspection Check | Discrepancies Found |",
             f"|---|---|",
+            f"| NaN / Inf Corruptions | {self.nan_inf_bars} |",
             f"| Duplicate Timestamps | {self.duplicate_timestamps} |",
             f"| Out-of-Order Timestamps | {self.out_of_order_timestamps} |",
             f"| Invalid OHLC Relationships | {self.invalid_ohlc_bars} |",
@@ -105,6 +108,7 @@ class DataQualityEngine:
                 zero_negative_volumes=0,
                 abnormal_price_spikes=0,
                 gaps_detected=0,
+                nan_inf_bars=0,
             )
             return df, rep
 
@@ -112,68 +116,112 @@ class DataQualityEngine:
         total_input = len(work_df)
         issues = []
 
-        # 1. Monotonic Timestamp & Duplicate Check
-        duplicate_ts_mask = work_df["timestamp"].duplicated(keep="first")
-        duplicate_count = int(duplicate_ts_mask.sum())
-        if duplicate_count > 0:
-            for ts in work_df.loc[duplicate_ts_mask, "timestamp"].head(10):
-                issues.append({
-                    "type": "DUPLICATE_TIMESTAMP",
-                    "timestamp": str(ts),
-                    "description": "Identical timestamp candle found and deduplicated.",
-                })
-            work_df = work_df.drop_duplicates(subset=["timestamp"], keep="first")
+        # 1. Explicit NaN, None, +inf, -inf Check in OHLCV
+        ohlcv_cols = ["open", "high", "low", "close", "volume"]
+        nan_inf_mask = pd.Series(False, index=work_df.index)
 
-        # 2. Out-of-Order Timestamps
-        is_monotonic = work_df["timestamp"].is_monotonic_increasing
+        for col in ohlcv_cols:
+            if col in work_df.columns:
+                series = work_df[col]
+                # Detect null / NaN / None
+                col_isna = series.isna()
+                # Detect +/- inf after numeric conversion
+                numeric_series = pd.to_numeric(series, errors="coerce")
+                col_isinf = np.isinf(numeric_series)
+                # If numeric conversion resulted in NaN for non-empty original, it was non-numeric
+                col_non_numeric = numeric_series.isna() & series.notna()
+
+                nan_inf_mask = nan_inf_mask | col_isna | col_isinf | col_non_numeric
+
+        nan_inf_count = int(nan_inf_mask.sum())
+        if nan_inf_count > 0:
+            for idx, row in work_df[nan_inf_mask].head(10).iterrows():
+                ts_str = str(row.get("timestamp", idx))
+                issues.append({
+                    "type": "NAN_OR_INF_VALUE",
+                    "timestamp": ts_str,
+                    "description": f"Bar contains NaN, None, non-numeric, or Inf value: O={row.get('open')}, H={row.get('high')}, L={row.get('low')}, C={row.get('close')}, V={row.get('volume')}.",
+                })
+            # Quarantine and exclude from clean dataset
+            work_df = work_df[~nan_inf_mask].copy()
+
+        # 2. Monotonic Timestamp & Duplicate Check
+        duplicate_count = 0
+        if not work_df.empty and "timestamp" in work_df.columns:
+            duplicate_ts_mask = work_df["timestamp"].duplicated(keep="first")
+            duplicate_count = int(duplicate_ts_mask.sum())
+            if duplicate_count > 0:
+                for ts in work_df.loc[duplicate_ts_mask, "timestamp"].head(10):
+                    issues.append({
+                        "type": "DUPLICATE_TIMESTAMP",
+                        "timestamp": str(ts),
+                        "description": "Identical timestamp candle found and deduplicated.",
+                    })
+                work_df = work_df.drop_duplicates(subset=["timestamp"], keep="first")
+
+        # 3. Out-of-Order Timestamps
         out_of_order_count = 0
-        if not is_monotonic:
-            diffs = work_df["timestamp"].diff()
-            out_of_order_count = int((diffs < pd.Timedelta(0)).sum())
-            issues.append({
-                "type": "OUT_OF_ORDER_TIMESTAMPS",
-                "timestamp": str(work_df["timestamp"].iloc[0]),
-                "description": f"Found {out_of_order_count} non-chronological candles. Sorting strictly by UTC timestamp.",
-            })
-            work_df = work_df.sort_values("timestamp").reset_index(drop=True)
+        if not work_df.empty and "timestamp" in work_df.columns:
+            is_monotonic = work_df["timestamp"].is_monotonic_increasing
+            if not is_monotonic:
+                diffs = work_df["timestamp"].diff()
+                out_of_order_count = int((diffs < pd.Timedelta(0)).sum())
+                issues.append({
+                    "type": "OUT_OF_ORDER_TIMESTAMPS",
+                    "timestamp": str(work_df["timestamp"].iloc[0]),
+                    "description": f"Found {out_of_order_count} non-chronological candles. Sorting strictly by UTC timestamp.",
+                })
+                work_df = work_df.sort_values("timestamp").reset_index(drop=True)
 
-        # 3. Invalid OHLC Relationships
+        # 4. Invalid OHLC Relationships
         # High >= Low, High >= Open, High >= Close, Low <= Open, Low <= Close, prices > 0
-        invalid_ohlc_mask = (
-            (work_df["high"] < work_df["low"]) |
-            (work_df["high"] < work_df["open"]) |
-            (work_df["high"] < work_df["close"]) |
-            (work_df["low"] > work_df["open"]) |
-            (work_df["low"] > work_df["close"]) |
-            (work_df["low"] <= 0) |
-            (work_df["open"] <= 0) |
-            (work_df["high"] <= 0) |
-            (work_df["close"] <= 0)
-        )
-        invalid_ohlc_count = int(invalid_ohlc_mask.sum())
-        if invalid_ohlc_count > 0:
-            for _, row in work_df[invalid_ohlc_mask].head(10).iterrows():
-                issues.append({
-                    "type": "INVALID_OHLC_GEOMETRY",
-                    "timestamp": str(row["timestamp"]),
-                    "description": f"O={row['open']}, H={row['high']}, L={row['low']}, C={row['close']} violates OHLC bounds.",
-                })
-            # Drop invalid OHLC bars rather than silently altering them
-            work_df = work_df[~invalid_ohlc_mask].copy()
+        invalid_ohlc_count = 0
+        if not work_df.empty:
+            for col in ["open", "high", "low", "close"]:
+                work_df[col] = pd.to_numeric(work_df[col], errors="coerce")
 
-        # 4. Zero / Negative Volume
-        zero_neg_vol_mask = work_df["volume"] <= 0
-        zero_neg_vol_count = int(zero_neg_vol_mask.sum())
-        if (work_df["volume"] < 0).any():
-            for _, row in work_df[work_df["volume"] < 0].head(5).iterrows():
-                issues.append({
-                    "type": "NEGATIVE_VOLUME",
-                    "timestamp": str(row["timestamp"]),
-                    "description": f"Negative volume {row['volume']} reset to 0.",
-                })
-            work_df.loc[work_df["volume"] < 0, "volume"] = 0.0
+            invalid_ohlc_mask = (
+                work_df["open"].isna() |
+                work_df["high"].isna() |
+                work_df["low"].isna() |
+                work_df["close"].isna() |
+                (work_df["high"] < work_df["low"]) |
+                (work_df["high"] < work_df["open"]) |
+                (work_df["high"] < work_df["close"]) |
+                (work_df["low"] > work_df["open"]) |
+                (work_df["low"] > work_df["close"]) |
+                (work_df["low"] <= 0) |
+                (work_df["open"] <= 0) |
+                (work_df["high"] <= 0) |
+                (work_df["close"] <= 0)
+            )
+            invalid_ohlc_count = int(invalid_ohlc_mask.sum())
+            if invalid_ohlc_count > 0:
+                for _, row in work_df[invalid_ohlc_mask].head(10).iterrows():
+                    issues.append({
+                        "type": "INVALID_OHLC_GEOMETRY",
+                        "timestamp": str(row["timestamp"]),
+                        "description": f"O={row['open']}, H={row['high']}, L={row['low']}, C={row['close']} violates OHLC bounds.",
+                    })
+                # Drop invalid OHLC bars rather than silently altering them
+                work_df = work_df[~invalid_ohlc_mask].copy()
 
-        # 5. Abnormal Price Spikes (> 5σ relative to 20-bar volatility)
+        # 5. Zero / Negative Volume
+        zero_neg_vol_count = 0
+        if not work_df.empty and "volume" in work_df.columns:
+            work_df["volume"] = pd.to_numeric(work_df["volume"], errors="coerce").fillna(0.0)
+            zero_neg_vol_mask = work_df["volume"] <= 0
+            zero_neg_vol_count = int(zero_neg_vol_mask.sum())
+            if (work_df["volume"] < 0).any():
+                for _, row in work_df[work_df["volume"] < 0].head(5).iterrows():
+                    issues.append({
+                        "type": "NEGATIVE_VOLUME",
+                        "timestamp": str(row["timestamp"]),
+                        "description": f"Negative volume {row['volume']} reset to 0.",
+                    })
+                work_df.loc[work_df["volume"] < 0, "volume"] = 0.0
+
+        # 6. Abnormal Price Spikes (> 5σ relative to 20-bar volatility)
         spikes_count = 0
         if len(work_df) >= 20:
             pct_change = work_df["close"].pct_change().abs()
@@ -188,7 +236,7 @@ class DataQualityEngine:
                         "description": f"Extreme price jump observed at close={row['close']}.",
                     })
 
-        # 6. Gap Detection
+        # 7. Gap Detection
         gaps_count = 0
         if expected_frequency_seconds and len(work_df) > 1:
             time_diffs = work_df["timestamp"].diff().dt.total_seconds().dropna()
@@ -205,6 +253,7 @@ class DataQualityEngine:
         # Scoring Formula:
         # Base 100, penalized by invalid bars, duplicates, and corruptions
         penalty = (
+            (nan_inf_count / max(total_input, 1)) * 50.0 +
             (duplicate_count / max(total_input, 1)) * 30.0 +
             (invalid_ohlc_count / max(total_input, 1)) * 50.0 +
             (out_of_order_count / max(total_input, 1)) * 20.0 +
@@ -227,6 +276,7 @@ class DataQualityEngine:
             zero_negative_volumes=zero_neg_vol_count,
             abnormal_price_spikes=spikes_count,
             gaps_detected=gaps_count,
+            nan_inf_bars=nan_inf_count,
             date_range_start=start_str,
             date_range_end=end_str,
             issues_summary=issues,

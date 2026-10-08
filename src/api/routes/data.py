@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.core.logger import logger
+from src.data.sources.dukascopy import DukascopyClient
 from src.data.sources.yahoo import YahooFinanceClient
 from src.data.sources.delta import DeltaExchangeClient
 from src.data.validation.quality_engine import DataQualityEngine
@@ -31,7 +32,15 @@ async def ingest_market_data(req: IngestRequest, db: AsyncSession = Depends(get_
 
     # 1. Fetch raw data
     try:
-        if req.source.upper() == "YAHOO":
+        if req.source.upper() in ("DUKASCOPY", "DUKAS"):
+            client = DukascopyClient()
+            raw_df = await client.fetch_candles(
+                symbol=req.symbol,
+                timeframe=req.timeframe,
+                start_time=req.start_time,
+                end_time=req.end_time,
+            )
+        elif req.source.upper() == "YAHOO":
             client = YahooFinanceClient()
             raw_df = await client.fetch_candles(
                 symbol=req.symbol,

@@ -43,16 +43,20 @@ $$\text{Fee} = \text{Notional Value} \times \text{FeeRate}$$
    $$\text{CAGR} = \left(\frac{E_{\text{final}}}{E_0}\right)^{\frac{365.25}{\text{Days}}} - 1$$
 2. **Sharpe Ratio (Annualized):**
    $$\text{Sharpe} = \frac{\mu_r - r_f}{\sigma_r} \times \sqrt{N_{\text{periods}}}$$
-3. **Sortino Ratio (Downside Volatility):**
+3. **Sortino Ratio (Institutional Downside Volatility):**
+   $$\sigma_{\text{downside}} = \sqrt{\frac{1}{N} \sum_{i=1}^N \min(0, r_i - r_f)^2}$$
    $$\text{Sortino} = \frac{\mu_r - r_f}{\sigma_{\text{downside}}} \times \sqrt{N_{\text{periods}}}$$
+   *(Note: Downside semi-deviation is calculated over all $N$ returns with non-negative returns clamped to zero, avoiding sample size bias).*
 4. **Maximum Drawdown (MDD) & Duration:**
    $$\text{Drawdown}_t = \frac{\max_{\tau \le t} E_\tau - E_t}{\max_{\tau \le t} E_\tau}$$
    $$\text{MDD} = \max_t (\text{Drawdown}_t)$$
-5. **Profit Factor:**
-   $$\text{Profit Factor} = \frac{\sum \text{Gross Profits}}{\sum |\text{Gross Losses}|}$$
+5. **Gross Profit Factor:**
+   $$\text{Profit Factor} = \frac{\sum \text{Gross Gains}}{\sum |\text{Gross Losses}|}$$
+   *(Note: Computed on gross trade returns before commission and funding fees).*
 6. **Expectancy (USD & R-Multiple):**
    $$\text{Expectancy} = (\text{Win Rate} \times \text{Avg Win}) - (\text{Loss Rate} \times \text{Avg Loss})$$
    $$\text{Avg R} = \frac{1}{N}\sum_{i=1}^N \frac{\text{PnL}_i}{\text{Initial Risk}_i}$$
 7. **Maximum Adverse Excursion (MAE) & Maximum Favorable Excursion (MFE):**
    $$\text{MAE}_i = \frac{\text{Worst Price During Trade} - \text{Entry Price}}{\text{Entry Price}}$$
    $$\text{MFE}_i = \frac{\text{Best Price During Trade} - \text{Entry Price}}{\text{Entry Price}}$$
+

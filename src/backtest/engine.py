@@ -45,6 +45,8 @@ class BacktestEngine:
         trade_counter = 0
 
         # Bar-by-bar execution loop
+        pending_signal: Optional[StrategySignal] = None
+
         for i in range(len(df)):
             row = df.iloc[i]
             ts = row["timestamp"]
@@ -53,7 +55,37 @@ class BacktestEngine:
             low_p = float(row["low"])
             close_p = float(row["close"])
 
-            # 1. Update active position excursions & check intra-bar exits
+            # 1. Next-Bar Open Execution: If a signal was queued from previous bar, execute at OPEN of this bar
+            if self.config.execution_on_next_bar_open and pending_signal is not None:
+                if current_position is None:
+                    sig = pending_signal
+                    fill_entry, slip_entry, spread_entry = self.execution_model.calculate_entry_fill(open_p, sig.direction)
+                    dollar_risk = cash * (self.config.risk_per_trade_pct / 100.0)
+                    price_risk = abs(open_p - sig.stop_loss)
+                    if price_risk > 0:
+                        calculated_size = dollar_risk / (price_risk * self.config.contract_multiplier)
+                        pos_size = min(max(calculated_size, 0.01), self.config.max_position_size)
+                        entry_fee = self.execution_model.calculate_fee(fill_entry, pos_size)
+
+                        current_position = {
+                            "direction": sig.direction,
+                            "entry_time": ts,
+                            "quote_entry": open_p,
+                            "fill_entry": fill_entry,
+                            "stop_loss": sig.stop_loss,
+                            "take_profit": sig.take_profit,
+                            "size": pos_size,
+                            "entry_fee": entry_fee,
+                            "entry_slip": slip_entry,
+                            "allocated_equity": cash,
+                            "initial_risk_usd": dollar_risk,
+                            "max_mae": 0.0,
+                            "max_mfe": 0.0,
+                            "holding_bars": 0,
+                        }
+                pending_signal = None  # Consumed or dropped
+
+            # 2. Update active position excursions & check intra-bar exits
             if current_position is not None:
                 current_position["holding_bars"] += 1
                 pos_dir = current_position["direction"]
@@ -143,37 +175,39 @@ class BacktestEngine:
                     trades.append(trade_rec)
                     current_position = None
 
-            # 2. Check for new entry signal at bar close (if flat)
+            # 3. Check for new entry signal at bar close (if flat)
             if current_position is None and ts in signals_by_ts:
                 sig = signals_by_ts[ts]
-                # Position Sizing based on Dollar Risk:
-                # Dollar Risk = Equity * risk_per_trade_pct
-                dollar_risk = cash * (self.config.risk_per_trade_pct / 100.0)
-                price_risk = abs(sig.entry_price - sig.stop_loss)
-                if price_risk > 0:
-                    calculated_size = dollar_risk / (price_risk * self.config.contract_multiplier)
-                    pos_size = min(max(calculated_size, 0.01), self.config.max_position_size)
+                if self.config.execution_on_next_bar_open:
+                    # Queue for execution at open of next bar (i+1)
+                    pending_signal = sig
+                else:
+                    # Execute immediately at current bar close
+                    dollar_risk = cash * (self.config.risk_per_trade_pct / 100.0)
+                    price_risk = abs(sig.entry_price - sig.stop_loss)
+                    if price_risk > 0:
+                        calculated_size = dollar_risk / (price_risk * self.config.contract_multiplier)
+                        pos_size = min(max(calculated_size, 0.01), self.config.max_position_size)
 
-                    # Calculate entry fill
-                    fill_entry, slip_entry, spread_entry = self.execution_model.calculate_entry_fill(sig.entry_price, sig.direction)
-                    entry_fee = self.execution_model.calculate_fee(fill_entry, pos_size)
+                        fill_entry, slip_entry, spread_entry = self.execution_model.calculate_entry_fill(sig.entry_price, sig.direction)
+                        entry_fee = self.execution_model.calculate_fee(fill_entry, pos_size)
 
-                    current_position = {
-                        "direction": sig.direction,
-                        "entry_time": ts,
-                        "quote_entry": sig.entry_price,
-                        "fill_entry": fill_entry,
-                        "stop_loss": sig.stop_loss,
-                        "take_profit": sig.take_profit,
-                        "size": pos_size,
-                        "entry_fee": entry_fee,
-                        "entry_slip": slip_entry,
-                        "allocated_equity": cash,
-                        "initial_risk_usd": dollar_risk,
-                        "max_mae": 0.0,
-                        "max_mfe": 0.0,
-                        "holding_bars": 0,
-                    }
+                        current_position = {
+                            "direction": sig.direction,
+                            "entry_time": ts,
+                            "quote_entry": sig.entry_price,
+                            "fill_entry": fill_entry,
+                            "stop_loss": sig.stop_loss,
+                            "take_profit": sig.take_profit,
+                            "size": pos_size,
+                            "entry_fee": entry_fee,
+                            "entry_slip": slip_entry,
+                            "allocated_equity": cash,
+                            "initial_risk_usd": dollar_risk,
+                            "max_mae": 0.0,
+                            "max_mfe": 0.0,
+                            "holding_bars": 0,
+                        }
 
             # 3. Calculate current bar end equity
             unrealized_pnl = 0.0
@@ -259,5 +293,6 @@ class BacktestEngine:
                 "taker_fee_rate": self.config.taker_fee_rate,
                 "risk_per_trade_pct": self.config.risk_per_trade_pct,
                 "contract_multiplier": self.config.contract_multiplier,
+                "execution_on_next_bar_open": self.config.execution_on_next_bar_open,
             },
         )

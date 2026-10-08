@@ -1,11 +1,24 @@
 """Database engine and asynchronous session factory."""
 
 from typing import AsyncGenerator
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from src.core.config import settings
 from src.core.logger import logger
 from src.database.models.base import Base
 from src.database.models import Instrument
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    """Enable SQLite foreign key constraints."""
+    module = type(dbapi_connection).__module__.lower()
+    conn_type = type(dbapi_connection).__name__.lower()
+    if "sqlite" in module or "sqlite" in conn_type:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 def get_engine_args(url: str):

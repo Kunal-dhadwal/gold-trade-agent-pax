@@ -26,7 +26,7 @@ async def check_health(db: AsyncSession = Depends(get_db)):
         status="OK" if db_status == "HEALTHY" and storage_ok else "DEGRADED",
         phase="PHASE 1 — FOUNDATION + DATA + BACKTESTING",
         database=db_status,
-        cache="STANDBY" if "redis" in settings.REDIS_URL else "LOCAL",
+        cache="STANDBY (PHASE 3)" if (settings.REDIS_URL and "redis" in settings.REDIS_URL) else "IN_MEMORY_LOCAL",
         storage_accessible=storage_ok,
         live_trading_enabled=settings.LIVE_TRADING_ENABLED,
         timestamp=datetime.now(timezone.utc).isoformat(),

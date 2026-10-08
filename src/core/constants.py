@@ -21,6 +21,7 @@ class Timeframe(str, Enum):
 
 
 class DataSource(str, Enum):
+    DUKASCOPY = "DUKASCOPY"
     YAHOO = "YAHOO"
     DELTA_EXCHANGE = "DELTA_EXCHANGE"
     LOCAL_ARCHIVE = "LOCAL_ARCHIVE"

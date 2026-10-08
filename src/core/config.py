@@ -1,7 +1,7 @@
 """Application configuration settings using Pydantic Settings."""
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 
-    # Redis Cache
-    REDIS_URL: str = "redis://localhost:6379/0"
+    # Redis Cache (Phase 3 Component — Optional in Phase 1 & 2)
+    REDIS_URL: Optional[str] = None
 
     # Data Storage Directories
     DATA_DIR: Path = Path("./data")

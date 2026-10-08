@@ -6,9 +6,9 @@
 ## 1. OVERVIEW & PERSISTENCE STRATEGY
 
 The system uses a hybrid persistence model:
-1. **Time-Series Candle Storage:** High-performance, columnar Apache Parquet files in `data/` partitioned by `instrument` and `timeframe` with PyArrow metadata.
+1. **Time-Series Candle Storage:** High-performance, columnar Apache Parquet files in `data/` partitioned by `source`, `instrument`, and `timeframe` with PyArrow metadata.
 2. **Transactional & Metadata Relational Store:** PostgreSQL 16 (production) with SQLAlchemy 2.0 ORM and Alembic migrations. In local/test environments, the connection layer supports SQLite (`sqlite+aiosqlite`) seamlessly.
-3. **In-Memory Cache & Event Bus:** Redis 7 for real-time market quotes, active state caches, and distributed pub/sub channels (fallback to `fakeredis` in offline unit tests).
+3. **In-Memory Cache & Event Bus (Phase 3):** Redis 7 for real-time market quotes, active state caches, and distributed pub/sub channels. Phase 1 and Phase 2 run independently with zero Redis runtime dependency. In Phase 1, an in-process asyncio event bus handles internal events.
 
 ---
 
@@ -309,3 +309,4 @@ System lifecycle events (startup, shutdown, data download, health check).
 - `details` (JSONB)
 - `status` (VARCHAR(20), NOT NULL): `SUCCESS`, `WARNING`, `ERROR`.
 - `created_at` (TIMESTAMP WITH TIME ZONE, DEFAULT NOW())
+
