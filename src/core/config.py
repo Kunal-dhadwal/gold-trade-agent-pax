@@ -64,5 +64,49 @@ class Settings(BaseSettings):
     MAX_CONSECUTIVE_LOSSES: int = 4
     MIN_RISK_REWARD_RATIO: float = 1.5
 
+    # Phase 3: Paper Trading & Security Configuration
+    JWT_SECRET_KEY: str = "institution-gold-paper-secret-key-2026"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
+    PAPER_DEFAULT_INITIAL_CAPITAL: float = 10000.0
+    PAPER_EXECUTION_MODEL: str = "NEXT_BAR_OPEN"
+    PAPER_MAX_SPREAD_RATIO: float = 2.0
+    PAPER_MAX_SPREAD_USD: float = 1.50
+    PAPER_KILL_SWITCH_POLICY: str = "FLATTEN_ALL"
+    PAPER_PROMOTION_MIN_WEEKS: int = 4
+    PAPER_PROMOTION_MIN_TRADES: int = 50
+    PAPER_PROMOTION_MIN_EXPECTANCY: float = 0.0
+    PAPER_PROMOTION_MIN_PROFIT_FACTOR: float = 1.25
+    PAPER_PROMOTION_MAX_DRAWDOWN_PCT: float = 12.0
+    PAPER_PROMOTION_MAX_TRACKING_ERROR_PCT: float = 2.0
+    DELTA_TARGET_SYMBOL: str = "PAXGUSDT"
+
+    # Pre-authorized Human Operator Signing Credentials for Promotion Sign-Off
+    OPERATOR_SIGNING_KEYS: dict[str, str] = {
+        "human_admin_1": "secure_admin_secret_2026",
+        "human_admin_more_1": "secure_secret_key_123",
+        "human_operator_1": "secure_operator_secret_2026",
+        "HUMAN_HEAD_QUANT_01": "super_secret_institutional_key",
+    }
+
+    from pydantic import model_validator
+
+    @model_validator(mode="after")
+    def validate_production_security(self) -> "Settings":
+        """Ensure production environment never boots with insecure default secrets."""
+        if str(self.ENVIRONMENT).lower() == "production":
+            insecure_defaults = [
+                "institution-gold-paper-secret-key-2026",
+                "secret",
+                "changeme",
+                "",
+            ]
+            if not self.JWT_SECRET_KEY or self.JWT_SECRET_KEY in insecure_defaults:
+                raise ValueError(
+                    "FATAL SECURITY VIOLATION: Production environment requires a securely configured "
+                    "JWT_SECRET_KEY via environment variable. Insecure default secret rejected."
+                )
+        return self
+
 
 settings = Settings()

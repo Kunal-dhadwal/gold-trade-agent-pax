@@ -44,7 +44,8 @@ class PaperTrade(Base, UUIDPrimaryKeyMixin):
     fees: Mapped[float] = mapped_column(Float, default=0.0)
     slippage: Mapped[float] = mapped_column(Float, default=0.0)
     status: Mapped[str] = mapped_column(String(20), default="OPEN")
-    exit_reason: Mapped[Optional[str]] = mapped_column(String(32))
+    account_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("paper_accounts.id"), nullable=True)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     mae_pct: Mapped[Optional[float]] = mapped_column(Float)
     mfe_pct: Mapped[Optional[float]] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -80,6 +81,8 @@ class Position(Base, UUIDPrimaryKeyMixin):
     __tablename__ = "positions"
 
     instrument_id: Mapped[str] = mapped_column(String(64), ForeignKey("instruments.id"), nullable=False)
+    account_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("paper_accounts.id"), nullable=True)
+    strategy_version_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("strategy_versions.id"), nullable=True)
     mode: Mapped[str] = mapped_column(String(16), default="PAPER")
     direction: Mapped[str] = mapped_column(String(10), nullable=False)
     quantity: Mapped[float] = mapped_column(Float, nullable=False)

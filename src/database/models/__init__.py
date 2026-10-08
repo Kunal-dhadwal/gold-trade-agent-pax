@@ -9,6 +9,7 @@ from src.database.models.validation import ValidationResult, WalkForwardResult, 
 from src.database.models.trading import Signal, PaperTrade, LiveTrade, Position, RiskEvent
 from src.database.models.system import MarketRegimeRecord, AgentDecision, SystemEventRecord
 from src.database.models.research import ResearchSession, ResearchHypothesis
+from src.database.models.paper import PaperAccount, PaperTradingSession, PaperOrderEvent, PaperEquitySnapshot
 
 __all__ = [
     "Base",
@@ -34,4 +35,8 @@ __all__ = [
     "SystemEventRecord",
     "ResearchSession",
     "ResearchHypothesis",
+    "PaperAccount",
+    "PaperTradingSession",
+    "PaperOrderEvent",
+    "PaperEquitySnapshot",
 ]
