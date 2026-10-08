@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from src.core.config import settings
 from src.core.logger import logger
 from src.database.connection import init_db
-from src.api.routes import health, data, strategies, backtest
+from src.api.routes import health, data, strategies, backtest, research
 
 
 @asynccontextmanager
@@ -50,6 +50,7 @@ app.include_router(health.router, prefix=settings.API_PREFIX)
 app.include_router(data.router, prefix=settings.API_PREFIX)
 app.include_router(strategies.router, prefix=settings.API_PREFIX)
 app.include_router(backtest.router, prefix=settings.API_PREFIX)
+app.include_router(research.router, prefix=settings.API_PREFIX)
 
 
 @app.get("/")

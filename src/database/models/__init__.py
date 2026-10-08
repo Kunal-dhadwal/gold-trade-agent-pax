@@ -8,6 +8,7 @@ from src.database.models.backtests import Backtest, BacktestTrade
 from src.database.models.validation import ValidationResult, WalkForwardResult, MonteCarloResult
 from src.database.models.trading import Signal, PaperTrade, LiveTrade, Position, RiskEvent
 from src.database.models.system import MarketRegimeRecord, AgentDecision, SystemEventRecord
+from src.database.models.research import ResearchSession, ResearchHypothesis
 
 __all__ = [
     "Base",
@@ -31,4 +32,6 @@ __all__ = [
     "MarketRegimeRecord",
     "AgentDecision",
     "SystemEventRecord",
+    "ResearchSession",
+    "ResearchHypothesis",
 ]

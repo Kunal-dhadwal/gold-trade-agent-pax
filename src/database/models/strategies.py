@@ -32,9 +32,11 @@ class StrategyVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     take_profit_logic: Mapped[dict] = mapped_column(JSON, default=dict)
     position_sizing_logic: Mapped[dict] = mapped_column(JSON, default=dict)
     pine_script_code: Mapped[Optional[str]] = mapped_column(Text)
+    hypothesis_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("research_hypotheses.id"), nullable=True)
 
     strategy: Mapped["Strategy"] = relationship("Strategy", back_populates="versions")
     parameters: Mapped[List["StrategyParameter"]] = relationship("StrategyParameter", back_populates="version", cascade="all, delete-orphan")
+    hypothesis: Mapped[Optional["ResearchHypothesis"]] = relationship("ResearchHypothesis", back_populates="strategy_versions")
 
 
 class StrategyParameter(Base, UUIDPrimaryKeyMixin):

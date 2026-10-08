@@ -257,22 +257,27 @@ The database schema defines entities supporting the complete 4-phase roadmap. Ho
 ## 7. 4-PHASE ROADMAP & SUCCESS CRITERIA
 
 ```text
-Phase 1: Foundation + Data Ingestion + Deterministic Backtester (CURRENT REWORK)
-  ├── Canonical Governance: PROJECT_CONSTITUTION.md, ARCHITECTURE.md, PHASE_1_SPEC.md, ADRs
+Phase 1: Foundation + Data Ingestion + Deterministic Backtester (VERIFIED & FROZEN v1.1.0-phase1-verified)
+  ├── Canonical Governance: PROJECT_CONSTITUTION.md, ARCHITECTURE.md, PHASE_1_SPEC.md, ADR-001–005
   ├── Ingestion: Dukascopy XAUUSD (primary), Yahoo GC=F (secondary), Delta public metadata
   ├── Data Quality Engine: 9 corruption checks, NaN drop, quality reporting
   ├── Deterministic Indicators & Gold Session / Market Regime classification
   ├── Backtest Engine: Bar close & next open fills, conservative SL/TP tie-breaker, realistic costs
   ├── Institutional Metrics: Sharpe, standard Sortino, Gross Profit Factor, Drawdown, Expectancy
-  ├── FastAPI Endpoints & >= 85% Unit/Integration Test Coverage
-  └── Output: Phase 1 Forensic Certification Report
+  ├── FastAPI Endpoints & >= 85% Unit/Integration Test Coverage (60 tests, 91% coverage)
+  └── Status: 100% Verified, Certified & Frozen
 
-Phase 2: AI Strategy Factory + Robustness Validation
-  ├── Multi-Agent AI System: Market Analyst, Strategy Researcher, Performance Evaluator
-  ├── LLM Provider Abstraction: Local Ollama primary, Gemini secondary
-  ├── Validation Engine: Walk-Forward Analysis, Monte Carlo simulations, Out-of-Sample gate
-  ├── Pine Script v5 Generator with strict <= 5% execution parity gate
-  └── Output: Validated Strategy Catalogue & Phase 2 Certification Report
+Phase 2: AI Multi-Agent Strategy Generation & Validation Engine (SPECIFIED & FROZEN DESIGN)
+  ├── Canonical Specification: docs/PHASE_2_SPEC.md, ADR-006 through ADR-011
+  ├── 5 Specialized Agents: Market Analyst, Regime Analyst, Strategy Researcher, Quant Validator, Performance Analyst
+  ├── Non-Negotiable Principle: AI Proposes, Deterministic Systems Verify, Risk Engine Vetos
+  ├── LLM Provider Abstraction: Local Ollama primary (zero cost), Gemini secondary (ADR-006)
+  ├── Machine-Readable Strategy Contract: Strict Pydantic AST schema (ADR-007)
+  ├── Anti-Overfitting & Hard Rejection Gates: Trade count, GPF, MaxDD, DSR, 10-iteration limit (ADR-008)
+  ├── Validation Engines: Rolling Walk-Forward Analysis (WFE >= 50%) & Monte Carlo Bootstrap (ADR-009)
+  ├── Deterministic Ranking: Composite Strategy Score (CSS >= 80.0 for Phase 3 progression) (ADR-010)
+  ├── Research Memory: PostgreSQL sessions, hypotheses, decisions + file artifacts (ADR-011)
+  └── Output: Validated Strategy Catalogue & Institutional Research Teardowns
 
 Phase 3: Paper Trading + Real-Time Risk + Dashboard
   ├── Real-time Delta WebSocket streaming & Paper Trading Engine
