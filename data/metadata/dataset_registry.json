@@ -1,0 +1,18 @@
+{
+  "datasets": [
+    {
+      "instrument": "GC=F",
+      "source": "YAHOO",
+      "timeframe": "1h",
+      "is_resampled": false,
+      "candle_count": 510,
+      "start_time": "2026-09-08T05:00:00+00:00",
+      "end_time": "2026-10-08T05:21:56+00:00",
+      "file_path": "data/normalized/GC_F/1h.parquet",
+      "file_size_bytes": 23675,
+      "checksum_sha256": "99bcd111f7fa91d72e40cc41f239cd44985375be70def44daadd105eda2ac37d",
+      "quality_score": 100.0,
+      "updated_at": "2026-10-08T05:32:13.046673+00:00"
+    }
+  ]
+}
