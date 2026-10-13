@@ -103,3 +103,4 @@ flowchart TD
 3. **`.pytest_cache/`**: Pytest internal tracking cache.
 4. **Coverage XML / Reports**: Generated ephemeral test artifacts (`fee_manager_coverage.xml`).
 5. **Dukascopy Empty Dirs**: `data/raw/dukascopy/XAUUSD/2024/` (contained zero files).
+

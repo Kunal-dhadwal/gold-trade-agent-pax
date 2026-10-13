@@ -215,3 +215,4 @@ If you prefer an identical Linux environment on your Windows laptop:
 | **Memory Streaming in Downloader** | Uses standard Python `lzma`, `struct`, `urllib` | Fully cross-platform; tested for Windows $O(1)$ memory consumption. |
 | **Database Locks** | SQLite on Windows locks open files strictly | Do not open `data/gold_trading.db` in an external GUI viewer while running tests or CLI scripts. |
 | **PowerShell Line Continuations** | Backtick (`` ` ``) is used instead of backslash (`\`) | Use backtick for multi-line commands in PowerShell, or run commands on a single line. |
+
