@@ -5,6 +5,7 @@ Auth: RFC 7519 JWT RBAC (VIEWER, OPERATOR, ADMIN)
 """
 
 from datetime import datetime, timezone
+import logging
 from typing import Any, Dict, List, Optional
 import uuid
 
@@ -15,8 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.auth import require_role
 from src.api.schemas import KillSwitchIn, KillSwitchOut, RiskEventOut
 from src.database.connection import get_db
+from src.database.models.live import ReconciliationSnapshot
 from src.database.models.trading import RiskEvent
+from src.execution.reconciliation import ReconciliationService
 from src.paper.service import PaperTradingService
+
+logger = logging.getLogger("gold_quant.api.risk")
 
 router = APIRouter(prefix="/risk", tags=["Risk & Circuit Breakers"])
 service = PaperTradingService.get_instance()
@@ -73,7 +78,7 @@ async def get_risk_status(_user=Depends(require_role("VIEWER"))):
     eng = engines[0]
     ks_status = eng.risk_engine.kill_switch.get_status()
 
-    return {
+    res = {
         "status": "NORMAL" if not ks_status.get("active") else ks_status.get("state"),
         "kill_switch": ks_status,
         "gates": {
@@ -86,6 +91,47 @@ async def get_risk_status(_user=Depends(require_role("VIEWER"))):
             "gate_7_regime_filter": {"active": True},
             "gate_8_emergency_kill_switch": {"active": True, "state": ks_status.get("state")},
         },
+    }
+
+    rec_service = ReconciliationService.get_instance()
+    live_ks = rec_service.get_live_kill_switch()
+    live_risk = rec_service.get_live_risk_engine()
+    if live_ks is not None:
+        res["live_kill_switch"] = live_ks.get_status()
+    if live_risk is not None:
+        res["live_risk_engine"] = {
+            "account_id": live_risk.account_id,
+            "max_drawdown_pct": live_risk.max_drawdown_pct,
+            "max_daily_loss_pct": live_risk.max_daily_loss_pct,
+            "max_risk_per_trade_pct": live_risk.max_risk_per_trade_pct,
+            "max_leverage": live_risk.max_leverage,
+            "max_active_positions": live_risk.max_active_positions,
+            "consecutive_losses": live_risk.consecutive_losses,
+            "current_regime": live_risk.current_regime,
+            "quantity_drift": live_risk.quantity_drift,
+        }
+    return res
+
+
+@router.get("/live/status")
+async def get_live_risk_status(_user=Depends(require_role("VIEWER"))):
+    """Query operational status of Phase 4 12-Gate LiveRiskEngine and LiveKillSwitchFSM."""
+    rec_service = ReconciliationService.get_instance()
+    live_ks = rec_service.get_live_kill_switch()
+    live_risk = rec_service.get_live_risk_engine()
+    return {
+        "live_kill_switch": live_ks.get_status() if live_ks is not None else None,
+        "live_risk_engine": {
+            "account_id": live_risk.account_id,
+            "max_drawdown_pct": live_risk.max_drawdown_pct,
+            "max_daily_loss_pct": live_risk.max_daily_loss_pct,
+            "max_risk_per_trade_pct": live_risk.max_risk_per_trade_pct,
+            "max_leverage": live_risk.max_leverage,
+            "max_active_positions": live_risk.max_active_positions,
+            "consecutive_losses": live_risk.consecutive_losses,
+            "current_regime": live_risk.current_regime,
+            "quantity_drift": live_risk.quantity_drift,
+        } if live_risk is not None else None,
     }
 
 
@@ -112,6 +158,15 @@ async def trigger_kill_switch(
         res = await eng.flatten_all(reason=data.reason, triggered_by=data.operator_id)
         total_flattened += res.get("positions_flattened", 0)
         total_canceled += res.get("orders_canceled", 0)
+
+    # Trigger registered LiveKillSwitchFSM if present
+    live_ks = ReconciliationService.get_instance().get_live_kill_switch()
+    if live_ks is not None:
+        live_ks.trigger(
+            reason=data.reason,
+            triggered_by=data.operator_id,
+            policy=data.policy,
+        )
 
     await service.record_risk_event_durable(
         db=db,
@@ -147,6 +202,96 @@ async def reset_kill_switch(
             detail="SECURITY VETO: AI models possess zero authority to reset Kill Switch.",
         )
 
+    # RECONCILIATION DISCREPANCY GATE (RSK-02 & Section C.4)
+    rec_service = ReconciliationService.get_instance()
+    active_discrepancies = rec_service.get_discrepancy_count()
+    if active_discrepancies > 0:
+        logger.warning(
+            f"Kill Switch reset blocked by Reconciliation Gate: {active_discrepancies} active discrepancies in memory."
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Cannot reset Kill Switch: unresolved discrepancy count is {active_discrepancies}. "
+                "Zero discrepancies required. Remediate ghost positions or active order mismatches before reset."
+            ),
+        )
+
+    # Trigger immediate full live three-way reconciliation pass if daemon is registered
+    daemon = rec_service.get_daemon()
+    if daemon is not None:
+        try:
+            fresh_cycle = await daemon.run_reconciliation_cycle()
+            if fresh_cycle.get("discrepancy_count", 0) > 0 or fresh_cycle.get("status") != "CLEAN":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        f"Cannot reset Kill Switch: immediate pre-reset reconciliation cycle detected "
+                        f"{fresh_cycle.get('discrepancy_count', 0)} discrepancies (status={fresh_cycle.get('status')}). "
+                        "Zero discrepancies required. Remediate ghost positions or active order mismatches before reset."
+                    ),
+                )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.error(f"Error during pre-reset reconciliation cycle: {exc}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Cannot reset Kill Switch: pre-reset reconciliation cycle failed: {exc}",
+            )
+
+    # Check durable database authority (latest snapshot)
+    now_utc = datetime.now(timezone.utc)
+    snap_stmt = select(ReconciliationSnapshot).order_by(ReconciliationSnapshot.timestamp.desc()).limit(1)
+    snap_res = await db.execute(snap_stmt)
+    latest_snapshot = snap_res.scalar_one_or_none()
+    if latest_snapshot is not None:
+        if latest_snapshot.discrepancy_count > 0:
+            logger.warning(
+                f"Kill Switch reset blocked by Database Snapshot Gate: {latest_snapshot.discrepancy_count} discrepancies (status={latest_snapshot.status})."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Cannot reset Kill Switch: latest database reconciliation snapshot records "
+                    f"{latest_snapshot.discrepancy_count} unresolved discrepancies (status={latest_snapshot.status}). "
+                    "Zero discrepancies required. Remediate ghost positions before reset."
+                ),
+            )
+        snap_time = latest_snapshot.timestamp.replace(tzinfo=timezone.utc) if latest_snapshot.timestamp.tzinfo is None else latest_snapshot.timestamp
+        snap_age = (now_utc - snap_time).total_seconds()
+        if daemon is None and snap_age > 60.0:
+            logger.warning(f"Kill Switch reset blocked: latest database snapshot is stale ({snap_age:.1f}s > 60.0s)")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot reset Kill Switch: latest database reconciliation snapshot is stale ({snap_age:.1f}s > 60.0s).",
+            )
+
+    # Reset registered live order router if present
+    live_router = rec_service.get_router()
+    if live_router is not None:
+        try:
+            live_router.reset_kill_switch(operator_role="ADMIN")
+        except Exception as exc:
+            logger.warning(f"Error resetting live router kill switch: {exc}")
+
+    # Reset registered LiveKillSwitchFSM if present
+    live_ks = rec_service.get_live_kill_switch()
+    if live_ks is not None:
+        try:
+            live_ks.reset(
+                operator_role="ADMIN",
+                operator_id=operator_id,
+                discrepancy_count=active_discrepancies,
+                reconciliation_status="CLEAN",
+            )
+        except Exception as exc:
+            logger.warning(f"Error resetting LiveKillSwitchFSM: {exc}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Live Kill Switch FSM reset rejected: {exc}",
+            )
+
     engines = service.get_all_engines()
     now_str = datetime.now(timezone.utc).isoformat()
     for eng in engines:
@@ -171,4 +316,5 @@ async def reset_kill_switch(
         orders_canceled=0,
         message=f"Kill Switch reset to NORMAL by human admin {operator_id}. New trading unlocked.",
     )
+
 

@@ -1,0 +1,17 @@
+{
+  "instrument": "GC=F",
+  "timeframe": "1h",
+  "source": "YAHOO",
+  "input_file_path": "/home/epps/MyProject/AGentTrXPAUS/data/raw/yahoo/raw_GC_F_1h_20261008_053213.json",
+  "input_sha256": "ee9d5ac7d8f46f73454c6abf61b410fd71adbd8aa26e4341c140418207b102de",
+  "input_size_bytes": 49032,
+  "total_input_rows": 510,
+  "valid_bars_retained": 510,
+  "rejected_rows_count": 0,
+  "quality_score": 100.0,
+  "start_time": "2026-09-08T05:00:00+00:00",
+  "end_time": "2026-10-08T05:21:56+00:00",
+  "canonical_parquet_path": "/home/epps/MyProject/AGentTrXPAUS/data/normalized/GC_F/1h.parquet",
+  "canonical_sha256": "4a8cedf0e64e806f10f04293d45f728767fc666a92a84ccb4608e2ce3c8b1f13",
+  "imported_at": "2026-10-12T15:59:58.789422+00:00"
+}

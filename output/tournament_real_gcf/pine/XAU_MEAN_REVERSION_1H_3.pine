@@ -1,0 +1,81 @@
+//@version=6
+// AGentTrXPAUS Auto-Generated Trading Strategy: XAU_MEAN_REVERSION_1H_3
+// Strategy ID: c60e649b-4b8d-427b-bf6d-b5833cfe05a1
+// Hypothesis: Gold edge in RANGING (1h): Structural liquidity and volume patterns identified by market structure analysis.
+// Target Instrument: GC=F | Timeframe: 1h
+// Direction: LONG | Regimes: ['RANGING']
+// Transpiled: 2026-10-12T13:07:24Z
+
+strategy(title="XAU_MEAN_REVERSION_1H_3", shorttitle="XAU_MEAN_REVERSI", overlay=true,
+         initial_capital=10000.0,
+         default_qty_type=strategy.percent_of_equity, default_qty_value=1.0,
+         commission_type=strategy.commission.percent, commission_value=0.0500,
+         slippage=1, pyramiding=0,
+         process_orders_on_close=true,
+         calc_on_every_tick=false,
+         calc_on_order_fills=false)
+
+// ============================================================================
+// Strategy Inputs & Tunable Parameters
+// ============================================================================
+// (No optimizable parameters declared in AST)
+
+// Risk & Position Management Inputs
+p_sl_multiplier = input.float(1.50, title="Stop Loss Multiplier (ATR_MULTIPLE)", minval=0.1, step=0.1, group="Risk Management")
+p_tp_multiplier = input.float(3.00, title="Take Profit Multiplier (ATR_MULTIPLE)", minval=0.1, step=0.1, group="Risk Management")
+p_max_holding_bars = input.int(48, title="Max Holding Bars", minval=1, maxval=500, group="Risk Management")
+
+// ============================================================================
+// Technical Indicators (Strict Non-Repainting Calculation)
+// ============================================================================
+// Baseline ATR for volatility-adjusted stop-loss & take-profit
+atr_baseline = ta.atr(14)
+
+rsi_14 = ta.rsi(close, 14)
+
+ema_filter = ta.ema(close, 50)
+
+
+// ============================================================================
+// Market Session Constraints (UTC Standard)
+// ============================================================================
+session_allowed = true
+
+// ============================================================================
+// Entry & Exit Conditions
+// ============================================================================
+entry_rule_triggered = (rsi_14 < 30)
+exit_rule_triggered = (rsi_14 > 50)
+
+can_enter = entry_rule_triggered and session_allowed
+
+// ============================================================================
+// Stop-Loss & Take-Profit Calculation
+// ============================================================================
+sl_distance = math.max(atr_baseline * p_sl_multiplier, 0.50)
+tp_distance = math.max(atr_baseline * p_tp_multiplier, 0.75)
+
+// ============================================================================
+// Order Execution & Trade Lifecycle Management
+// ============================================================================
+if can_enter and strategy.position_size == 0
+    strategy.entry("XAU_MEAN_REVERSION_1H_3_Long", strategy.long)
+
+if strategy.position_size > 0
+    sl_price = strategy.position_avg_price - sl_distance
+    tp_price = strategy.position_avg_price + tp_distance
+    strategy.exit("XAU_MEAN_REVERSION_1H_3_ExitLong", from_entry="XAU_MEAN_REVERSION_1H_3_Long", stop=sl_price, limit=tp_price)
+
+if exit_rule_triggered and strategy.position_size > 0
+    strategy.close("XAU_MEAN_REVERSION_1H_3_Long", comment="Exit Rule Triggered")
+
+if p_max_holding_bars > 0 and strategy.position_size > 0
+    in_trade = strategy.position_size > 0
+    bars_in_trade = ta.barssince(in_trade and not in_trade[1])
+    if bars_in_trade >= p_max_holding_bars
+        strategy.close("XAU_MEAN_REVERSION_1H_3_Long", comment="Max Holding Exceeded")
+
+// ============================================================================
+// Visual Indicators & Execution Diagnostics
+// ============================================================================
+plot(ema_filter, title="EMA_FILTER", color=color.blue, linewidth=2)

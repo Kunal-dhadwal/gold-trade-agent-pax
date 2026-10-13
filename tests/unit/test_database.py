@@ -242,3 +242,52 @@ async def test_init_db_seeding():
         assert "XAUUSD_PERP" in inst_ids
 
 
+def test_validate_database_backend_development_permits_sqlite(monkeypatch):
+    """Verify development environment permits SQLite fallback."""
+    from src.database.connection import validate_database_backend
+    from src.core.config import settings
+
+    monkeypatch.setattr(settings, "ENVIRONMENT", "development")
+    monkeypatch.setattr(settings, "LIVE_TRADING_ENABLED", False)
+
+    # Must succeed without error
+    validate_database_backend("sqlite+aiosqlite:///./data/gold_trading.db")
+
+
+def test_validate_database_backend_production_rejects_sqlite(monkeypatch):
+    """Verify production environment strictly rejects SQLite with RuntimeError."""
+    from src.database.connection import validate_database_backend
+    from src.core.config import settings
+
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+    monkeypatch.setattr(settings, "LIVE_TRADING_ENABLED", False)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        validate_database_backend("sqlite+aiosqlite:///./data/gold_trading.db")
+    assert "PRODUCTION DATABASE CONFIGURATION ERROR" in str(exc_info.value)
+
+
+def test_validate_database_backend_live_trading_rejects_sqlite(monkeypatch):
+    """Verify live trading enabled strictly rejects SQLite."""
+    from src.database.connection import validate_database_backend
+    from src.core.config import settings
+
+    monkeypatch.setattr(settings, "ENVIRONMENT", "development")
+    monkeypatch.setattr(settings, "LIVE_TRADING_ENABLED", True)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        validate_database_backend("sqlite+aiosqlite:///./data/gold_trading.db")
+    assert "LIVE TRADING SAFETY INVARIANT BREACH" in str(exc_info.value)
+
+
+def test_validate_database_backend_permits_postgresql(monkeypatch):
+    """Verify PostgreSQL URL is permitted across all environments."""
+    from src.database.connection import validate_database_backend
+    from src.core.config import settings
+
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+    monkeypatch.setattr(settings, "LIVE_TRADING_ENABLED", True)
+
+    validate_database_backend("postgresql+asyncpg://postgres:postgres@localhost:5432/gold_trading")
+
+

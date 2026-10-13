@@ -1,0 +1,103 @@
+{
+  "batch_id": "gold_batch_20261012_125534",
+  "timestamp": "2026-10-12T12:55:34.786207+00:00",
+  "duration_seconds": 6.66,
+  "instrument": "XAUUSD",
+  "timeframe": "1h",
+  "provider": "mock",
+  "total_requested": 2,
+  "total_generated": 2,
+  "surviving_count": 0,
+  "rejected_count": 2,
+  "winner_id": null,
+  "winner_name": null,
+  "data_provenance": {
+    "data_source": "SYNTHETIC_BENCHMARK",
+    "file_path": null,
+    "file_sha256": null,
+    "total_bars": 12000,
+    "start_time": "2023-01-01T00:00:00+00:00",
+    "end_time": "2024-05-14T23:00:00+00:00",
+    "is_synthetic": true,
+    "instrument": "XAUUSD",
+    "timeframe": "1h"
+  },
+  "leaderboard": [
+    {
+      "rank": 1,
+      "strategy_id": "ffdbf5eb-428e-453a-b0ce-01a31503e8e1",
+      "strategy_name": "XAU_TREND_FOLLOWING_1H_1",
+      "css_score": 0.0,
+      "dsr_score": 0.0,
+      "tier": "REJECTED",
+      "passed_all_gates": false,
+      "sortino_ratio": 53.7424,
+      "profit_factor": 99.0,
+      "max_drawdown_pct": 0.1059,
+      "wfe_ratio": 0.0,
+      "monte_carlo_ruin_prob": 1.0,
+      "holdout_sharpe": null,
+      "holdout_passed": null,
+      "trials_count": 1,
+      "expected_max_sharpe": 0.0,
+      "lineage": {
+        "strategy_id": "ffdbf5eb-428e-453a-b0ce-01a31503e8e1",
+        "name": "XAU_TREND_FOLLOWING_1H_1",
+        "hypothesis_id": null,
+        "parent_strategy_id": null,
+        "generation": 1,
+        "trial_index": 1,
+        "ast_hash": "60356f765cbec58f173f61cef2bc1c0561e207ec93baf0b20654aeb09332043b",
+        "created_at": "2026-10-12T12:55:35.594792+00:00"
+      },
+      "rejection_reasons": [
+        "IN_SAMPLE_HARD_GATES: Trade count 11 < minimum gate 50."
+      ],
+      "explanation": "Rejected at validation pipeline: IN_SAMPLE_HARD_GATES: Trade count 11 < minimum gate 50."
+    },
+    {
+      "rank": 2,
+      "strategy_id": "53542338-9aea-4b7e-96f2-e719724d4708",
+      "strategy_name": "XAU_BREAKOUT_1H_2",
+      "css_score": 0.0,
+      "dsr_score": 0.0,
+      "tier": "REJECTED",
+      "passed_all_gates": false,
+      "sortino_ratio": -9.3303,
+      "profit_factor": 0.3104,
+      "max_drawdown_pct": 48.1531,
+      "wfe_ratio": 0.0,
+      "monte_carlo_ruin_prob": 1.0,
+      "holdout_sharpe": null,
+      "holdout_passed": null,
+      "trials_count": 2,
+      "expected_max_sharpe": 0.0,
+      "lineage": {
+        "strategy_id": "53542338-9aea-4b7e-96f2-e719724d4708",
+        "name": "XAU_BREAKOUT_1H_2",
+        "hypothesis_id": null,
+        "parent_strategy_id": null,
+        "generation": 1,
+        "trial_index": 2,
+        "ast_hash": "44eaefe247b595679000a1363c325bc442fcd3f612e8c6ecfce4b933b157eb1e",
+        "created_at": "2026-10-12T12:55:38.443853+00:00"
+      },
+      "rejection_reasons": [
+        "IN_SAMPLE_HARD_GATES: Gross Profit Factor 0.31 < minimum 1.30.; Max Drawdown 48.15% > limit 15.0%.; Expectancy $-72.96 < spread threshold $0.04."
+      ],
+      "explanation": "Rejected at validation pipeline: IN_SAMPLE_HARD_GATES: Gross Profit Factor 0.31 < minimum 1.30.; Max Drawdown 48.15% > limit 15.0%.; Expectancy $-72.96 < spread threshold $0.04."
+    }
+  ],
+  "dossiers": {
+    "XAU_TREND_FOLLOWING_1H_1": "output/strategies_db/dossiers/XAU_TREND_FOLLOWING_1H_1_dossier.md",
+    "XAU_BREAKOUT_1H_2": "output/strategies_db/dossiers/XAU_BREAKOUT_1H_2_dossier.md"
+  },
+  "pine_scripts": {
+    "XAU_TREND_FOLLOWING_1H_1": "output/strategies_db/pine/XAU_TREND_FOLLOWING_1H_1.pine",
+    "XAU_BREAKOUT_1H_2": "output/strategies_db/pine/XAU_BREAKOUT_1H_2.pine"
+  },
+  "generation_failures": [
+    "Refinement 1 for XAU_TREND_FOLLOWING_1H_1 failed: Agent 3 failed to generate a valid StrategyProposal. Raw output: MOCK_RESPONSE: Deterministic research hypothesis generated.",
+    "Refinement 1 for XAU_BREAKOUT_1H_2 failed: Agent 3 failed to generate a valid StrategyProposal. Raw output: MOCK_RESPONSE: Deterministic research hypothesis generated."
+  ]
+}

@@ -1,0 +1,85 @@
+//@version=6
+// AGentTrXPAUS Auto-Generated Trading Strategy: XAU_BREAKOUT_1H_2
+// Strategy ID: 485a8daa-b018-4752-ab2d-5fbaf3d91cf7
+// Hypothesis: Gold edge in TRENDING_BEAR (1h): Structural liquidity and volume patterns identified by market structure analysis.
+// Target Instrument: XAUUSD | Timeframe: 1h
+// Direction: SHORT | Regimes: ['TRENDING_BEAR']
+// Transpiled: 2026-10-12T12:51:35Z
+
+strategy(title="XAU_BREAKOUT_1H_2", shorttitle="XAU_BREAKOUT_1H_", overlay=true,
+         initial_capital=10000.0,
+         default_qty_type=strategy.percent_of_equity, default_qty_value=1.0,
+         commission_type=strategy.commission.percent, commission_value=0.0500,
+         slippage=1, pyramiding=0,
+         process_orders_on_close=true,
+         calc_on_every_tick=false,
+         calc_on_order_fills=false)
+
+// ============================================================================
+// Strategy Inputs & Tunable Parameters
+// ============================================================================
+// (No optimizable parameters declared in AST)
+
+// Risk & Position Management Inputs
+p_sl_multiplier = input.float(1.50, title="Stop Loss Multiplier (ATR_MULTIPLE)", minval=0.1, step=0.1, group="Risk Management")
+p_tp_multiplier = input.float(3.00, title="Take Profit Multiplier (ATR_MULTIPLE)", minval=0.1, step=0.1, group="Risk Management")
+p_max_holding_bars = input.int(48, title="Max Holding Bars", minval=1, maxval=500, group="Risk Management")
+
+// ============================================================================
+// Technical Indicators (Strict Non-Repainting Calculation)
+// ============================================================================
+// Baseline ATR for volatility-adjusted stop-loss & take-profit
+atr_baseline = ta.atr(14)
+
+donchian_chan_upper = ta.highest(high, 20)
+donchian_chan_lower = ta.lowest(low, 20)
+donchian_chan_mid = math.avg(donchian_chan_upper, donchian_chan_lower)
+donchian_chan = donchian_chan_upper
+
+atr_vol = ta.atr(14)
+
+
+// ============================================================================
+// Market Session Constraints (UTC Standard)
+// ============================================================================
+session_allowed = true
+
+// ============================================================================
+// Entry & Exit Conditions
+// ============================================================================
+entry_rule_triggered = (close < donchian_chan[1])
+exit_rule_triggered = (close > donchian_chan[1])
+
+can_enter = entry_rule_triggered and session_allowed
+
+// ============================================================================
+// Stop-Loss & Take-Profit Calculation
+// ============================================================================
+sl_distance = math.max(atr_baseline * p_sl_multiplier, 0.50)
+tp_distance = math.max(atr_baseline * p_tp_multiplier, 0.75)
+
+// ============================================================================
+// Order Execution & Trade Lifecycle Management
+// ============================================================================
+if can_enter and strategy.position_size == 0
+    strategy.entry("XAU_BREAKOUT_1H_2_Short", strategy.short)
+
+if strategy.position_size < 0
+    sl_price = strategy.position_avg_price + sl_distance
+    tp_price = strategy.position_avg_price - tp_distance
+    strategy.exit("XAU_BREAKOUT_1H_2_ExitShort", from_entry="XAU_BREAKOUT_1H_2_Short", stop=sl_price, limit=tp_price)
+
+if exit_rule_triggered and strategy.position_size < 0
+    strategy.close("XAU_BREAKOUT_1H_2_Short", comment="Exit Rule Triggered")
+
+if p_max_holding_bars > 0 and strategy.position_size < 0
+    in_trade = strategy.position_size < 0
+    bars_in_trade = ta.barssince(in_trade and not in_trade[1])
+    if bars_in_trade >= p_max_holding_bars
+        strategy.close("XAU_BREAKOUT_1H_2_Short", comment="Max Holding Exceeded")
+
+// ============================================================================
+// Visual Indicators & Execution Diagnostics
+// ============================================================================
+plot(donchian_chan_upper, title="DONCHIAN_CHAN Channel High", color=color.teal)
+plot(donchian_chan_lower, title="DONCHIAN_CHAN Channel Low", color=color.teal)

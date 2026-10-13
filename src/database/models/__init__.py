@@ -10,6 +10,18 @@ from src.database.models.trading import Signal, PaperTrade, LiveTrade, Position,
 from src.database.models.system import MarketRegimeRecord, AgentDecision, SystemEventRecord
 from src.database.models.research import ResearchSession, ResearchHypothesis
 from src.database.models.paper import PaperAccount, PaperTradingSession, PaperOrderEvent, PaperEquitySnapshot
+from src.database.models.live import (
+    LiveAccount,
+    AccountFeeSchedule,
+    LiveOrder,
+    LiveOrderEvent,
+    LeaderLease,
+    ReconciliationSnapshot,
+    LiveFundingEvent,
+    OperatorReconciliationAuditLog,
+    ConsumedAuthorizationNonce,
+    AccountEquityHighWaterMark,
+)
 
 __all__ = [
     "Base",
@@ -39,4 +51,15 @@ __all__ = [
     "PaperTradingSession",
     "PaperOrderEvent",
     "PaperEquitySnapshot",
+    "LiveAccount",
+    "AccountFeeSchedule",
+    "LiveOrder",
+    "LiveOrderEvent",
+    "LeaderLease",
+    "ReconciliationSnapshot",
+    "LiveFundingEvent",
+    "OperatorReconciliationAuditLog",
+    "ConsumedAuthorizationNonce",
+    "AccountEquityHighWaterMark",
 ]
+

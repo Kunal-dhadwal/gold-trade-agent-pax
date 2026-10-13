@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from src.core.config import settings
 from src.core.logger import logger
 from src.database.connection import init_db
-from src.api.routes import backtest, data, health, paper, research, risk, strategies
+from src.api.routes import backtest, data, health, paper, reconciliation, research, risk, strategies
 from src.api.websockets.gateway import gateway_manager, ws_router
 
 
@@ -56,6 +56,7 @@ app.include_router(backtest.router, prefix=settings.API_PREFIX)
 app.include_router(research.router, prefix=settings.API_PREFIX)
 app.include_router(paper.router, prefix=settings.API_PREFIX)
 app.include_router(risk.router, prefix=settings.API_PREFIX)
+app.include_router(reconciliation.router, prefix=settings.API_PREFIX)
 app.include_router(ws_router)
 
 

@@ -1,0 +1,162 @@
+[
+  {
+    "rank": 1,
+    "strategy_id": "7d4afb14-ef7c-4ff8-9ace-48822b84a6c3",
+    "strategy_name": "XAU_MEAN_REVERSION_1H_3",
+    "css_score": 0.0,
+    "dsr_score": 0.0,
+    "tier": "REJECTED",
+    "passed_all_gates": false,
+    "sortino_ratio": 0.1744,
+    "profit_factor": 1.2712,
+    "max_drawdown_pct": 2.8865,
+    "wfe_ratio": 0.0,
+    "monte_carlo_ruin_prob": 1.0,
+    "holdout_sharpe": null,
+    "holdout_passed": null,
+    "trials_count": 3,
+    "expected_max_sharpe": 0.0,
+    "lineage": {
+      "strategy_id": "7d4afb14-ef7c-4ff8-9ace-48822b84a6c3",
+      "name": "XAU_MEAN_REVERSION_1H_3",
+      "hypothesis_id": null,
+      "parent_strategy_id": null,
+      "generation": 1,
+      "trial_index": 3,
+      "ast_hash": "547751806402d599199dca64841618ac8cbdc6ba33510fd7e6c31abdf05d0bb7",
+      "created_at": "2026-10-12T12:51:07.480158+00:00"
+    },
+    "rejection_reasons": [
+      "IN_SAMPLE_HARD_GATES: Trade count 5 < minimum gate 50.; Gross Profit Factor 1.27 < minimum 1.30."
+    ],
+    "explanation": "Rejected at validation pipeline: IN_SAMPLE_HARD_GATES: Trade count 5 < minimum gate 50.; Gross Profit Factor 1.27 < minimum 1.30."
+  },
+  {
+    "rank": 2,
+    "strategy_id": "775f5a4e-b600-445f-95b2-74557364ae19",
+    "strategy_name": "XAU_TREND_FOLLOWING_1H_4",
+    "css_score": 0.0,
+    "dsr_score": 0.0,
+    "tier": "REJECTED",
+    "passed_all_gates": false,
+    "sortino_ratio": -1.5373,
+    "profit_factor": 1.2112,
+    "max_drawdown_pct": 3.2412,
+    "wfe_ratio": 0.0,
+    "monte_carlo_ruin_prob": 1.0,
+    "holdout_sharpe": null,
+    "holdout_passed": null,
+    "trials_count": 4,
+    "expected_max_sharpe": 0.0,
+    "lineage": {
+      "strategy_id": "775f5a4e-b600-445f-95b2-74557364ae19",
+      "name": "XAU_TREND_FOLLOWING_1H_4",
+      "hypothesis_id": null,
+      "parent_strategy_id": null,
+      "generation": 1,
+      "trial_index": 4,
+      "ast_hash": "2ba68afe9fd8bdfae0f6c70db9e02bfb5561fb75239b91dc10497444d795fd08",
+      "created_at": "2026-10-12T12:51:07.593518+00:00"
+    },
+    "rejection_reasons": [
+      "IN_SAMPLE_HARD_GATES: Trade count 8 < minimum gate 50.; Gross Profit Factor 1.21 < minimum 1.30.; Expectancy $-20.22 < spread threshold $0.04."
+    ],
+    "explanation": "Rejected at validation pipeline: IN_SAMPLE_HARD_GATES: Trade count 8 < minimum gate 50.; Gross Profit Factor 1.21 < minimum 1.30.; Expectancy $-20.22 < spread threshold $0.04."
+  },
+  {
+    "rank": 3,
+    "strategy_id": "02fcfff5-15d6-4cf6-a27c-9e4ef101995b",
+    "strategy_name": "XAU_BREAKOUT_1H_2",
+    "css_score": 0.0,
+    "dsr_score": 0.0,
+    "tier": "REJECTED",
+    "passed_all_gates": false,
+    "sortino_ratio": -4.6857,
+    "profit_factor": 0.6357,
+    "max_drawdown_pct": 5.7549,
+    "wfe_ratio": 0.0,
+    "monte_carlo_ruin_prob": 1.0,
+    "holdout_sharpe": null,
+    "holdout_passed": null,
+    "trials_count": 2,
+    "expected_max_sharpe": 0.0,
+    "lineage": {
+      "strategy_id": "02fcfff5-15d6-4cf6-a27c-9e4ef101995b",
+      "name": "XAU_BREAKOUT_1H_2",
+      "hypothesis_id": null,
+      "parent_strategy_id": null,
+      "generation": 1,
+      "trial_index": 2,
+      "ast_hash": "44eaefe247b595679000a1363c325bc442fcd3f612e8c6ecfce4b933b157eb1e",
+      "created_at": "2026-10-12T12:51:07.310868+00:00"
+    },
+    "rejection_reasons": [
+      "IN_SAMPLE_HARD_GATES: Trade count 13 < minimum gate 50.; Gross Profit Factor 0.64 < minimum 1.30.; Expectancy $-41.08 < spread threshold $0.04."
+    ],
+    "explanation": "Rejected at validation pipeline: IN_SAMPLE_HARD_GATES: Trade count 13 < minimum gate 50.; Gross Profit Factor 0.64 < minimum 1.30.; Expectancy $-41.08 < spread threshold $0.04."
+  },
+  {
+    "rank": 4,
+    "strategy_id": "18607d99-2678-4c66-aa6b-2436401e3877",
+    "strategy_name": "XAU_TREND_FOLLOWING_1H_1",
+    "css_score": 0.0,
+    "dsr_score": 0.0,
+    "tier": "REJECTED",
+    "passed_all_gates": false,
+    "sortino_ratio": -4.7177,
+    "profit_factor": 0.5408,
+    "max_drawdown_pct": 5.771,
+    "wfe_ratio": 0.0,
+    "monte_carlo_ruin_prob": 1.0,
+    "holdout_sharpe": null,
+    "holdout_passed": null,
+    "trials_count": 1,
+    "expected_max_sharpe": 0.0,
+    "lineage": {
+      "strategy_id": "18607d99-2678-4c66-aa6b-2436401e3877",
+      "name": "XAU_TREND_FOLLOWING_1H_1",
+      "hypothesis_id": null,
+      "parent_strategy_id": null,
+      "generation": 1,
+      "trial_index": 1,
+      "ast_hash": "60356f765cbec58f173f61cef2bc1c0561e207ec93baf0b20654aeb09332043b",
+      "created_at": "2026-10-12T12:51:07.127825+00:00"
+    },
+    "rejection_reasons": [
+      "IN_SAMPLE_HARD_GATES: Trade count 10 < minimum gate 50.; Gross Profit Factor 0.54 < minimum 1.30.; Expectancy $-48.19 < spread threshold $0.04."
+    ],
+    "explanation": "Rejected at validation pipeline: IN_SAMPLE_HARD_GATES: Trade count 10 < minimum gate 50.; Gross Profit Factor 0.54 < minimum 1.30.; Expectancy $-48.19 < spread threshold $0.04."
+  },
+  {
+    "rank": 5,
+    "strategy_id": "64aab428-9565-4a67-8fb9-a2f49b8d63e4",
+    "strategy_name": "XAU_BREAKOUT_1H_5",
+    "css_score": 0.0,
+    "dsr_score": 0.0,
+    "tier": "REJECTED",
+    "passed_all_gates": false,
+    "sortino_ratio": -7.7788,
+    "profit_factor": 0.3232,
+    "max_drawdown_pct": 5.7999,
+    "wfe_ratio": 0.0,
+    "monte_carlo_ruin_prob": 1.0,
+    "holdout_sharpe": null,
+    "holdout_passed": null,
+    "trials_count": 5,
+    "expected_max_sharpe": 0.0,
+    "lineage": {
+      "strategy_id": "64aab428-9565-4a67-8fb9-a2f49b8d63e4",
+      "name": "XAU_BREAKOUT_1H_5",
+      "hypothesis_id": null,
+      "parent_strategy_id": null,
+      "generation": 1,
+      "trial_index": 5,
+      "ast_hash": "e7a8422141cd4ea8d05d0107dda81a55fdcbebbbdf5f92d78d6eeaa6330b0af6",
+      "created_at": "2026-10-12T12:51:07.717812+00:00"
+    },
+    "rejection_reasons": [
+      "IN_SAMPLE_HARD_GATES: Trade count 7 < minimum gate 50.; Gross Profit Factor 0.32 < minimum 1.30.; Expectancy $-74.16 < spread threshold $0.04."
+    ],
+    "explanation": "Rejected at validation pipeline: IN_SAMPLE_HARD_GATES: Trade count 7 < minimum gate 50.; Gross Profit Factor 0.32 < minimum 1.30.; Expectancy $-74.16 < spread threshold $0.04."
+  }
+]

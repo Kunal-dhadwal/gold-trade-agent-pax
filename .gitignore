@@ -46,7 +46,13 @@ htmlcov/
 .tox/
 .nox/
 coverage.xml
+*_coverage.xml
 *.cover
+
+# Migration packages & archives
+migration_package*.tar.gz
+migration_package*.zip
+*_migration_backup.tar.gz
 
 # Data files (large datasets and raw downloads)
 *.db

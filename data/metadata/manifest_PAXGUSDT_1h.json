@@ -1,0 +1,17 @@
+{
+  "instrument": "PAXGUSDT",
+  "timeframe": "1h",
+  "source": "DELTA",
+  "input_file_path": "/home/epps/MyProject/AGentTrXPAUS/data/raw/delta/raw_delta_PAXGUSDT_1h_20261008_053350.json",
+  "input_sha256": "518703014b7d27312f92a7a87953abc5b55b56a5ff1e58093a0bbc63ab849098",
+  "input_size_bytes": 16270,
+  "total_input_rows": 164,
+  "valid_bars_retained": 164,
+  "rejected_rows_count": 0,
+  "quality_score": 100.0,
+  "start_time": "2026-10-01T10:00:00+00:00",
+  "end_time": "2026-10-08T05:00:00+00:00",
+  "canonical_parquet_path": "/home/epps/MyProject/AGentTrXPAUS/data/normalized/PAXGUSDT/1h.parquet",
+  "canonical_sha256": "58501f67601f6b722391a45271138d82f9ec3bf36e7497c31ef777e8cfa4f3c7",
+  "imported_at": "2026-10-12T16:02:24.278848+00:00"
+}

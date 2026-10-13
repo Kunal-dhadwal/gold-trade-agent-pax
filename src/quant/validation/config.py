@@ -24,6 +24,11 @@ class ValidationThresholdsConfig:
     MAX_PARAM_DEGRADATION: float = 0.40  # Max 40% performance drop under ±10% perturbation
     CSS_TIER1_THRESHOLD: float = 80.0  # Phase 3 Prime Candidate
     CSS_TIER2_THRESHOLD: float = 70.0  # Reserve Candidate
+    MIN_HOLDOUT_SHARPE: float = 1.0  # Phase 3 / Holdout hurdle
+    MAX_HOLDOUT_DRAWDOWN: float = 0.20  # 20.0% peak-to-trough
+    MIN_HOLDOUT_TRADES: int = 15
+    MIN_DSR_THRESHOLD: float = 0.95  # 95% confidence under multiple testing
+    HOLDOUT_RATIO: float = 0.20  # Final 20% quarantined
 
 
 # Global default configuration instance

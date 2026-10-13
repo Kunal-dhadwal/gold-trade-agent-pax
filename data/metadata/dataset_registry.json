@@ -2,17 +2,31 @@
   "datasets": [
     {
       "instrument": "GC=F",
-      "source": "YAHOO",
+      "source": "YAHOO_RAW_JSON",
       "timeframe": "1h",
       "is_resampled": false,
-      "candle_count": 10,
-      "start_time": "2024-01-01T00:00:00+00:00",
-      "end_time": "2024-01-01T09:00:00+00:00",
+      "candle_count": 510,
+      "start_time": "2026-09-08T05:00:00+00:00",
+      "end_time": "2026-10-08T05:21:56+00:00",
       "file_path": "data/normalized/GC_F/1h.parquet",
-      "file_size_bytes": 5090,
-      "checksum_sha256": "1c3190fa303ad95dbff616adfe5ae6c643b2b8a1ee77eb4942a32acfaeaa0b98",
+      "file_size_bytes": 23736,
+      "checksum_sha256": "4a8cedf0e64e806f10f04293d45f728767fc666a92a84ccb4608e2ce3c8b1f13",
       "quality_score": 100.0,
-      "updated_at": "2026-10-08T07:09:42.694180+00:00"
+      "updated_at": "2026-10-12T16:19:53.715587+00:00"
+    },
+    {
+      "instrument": "PAXGUSDT",
+      "source": "DELTA",
+      "timeframe": "1h",
+      "is_resampled": false,
+      "candle_count": 164,
+      "start_time": "2026-10-01T10:00:00+00:00",
+      "end_time": "2026-10-08T05:00:00+00:00",
+      "file_path": "data/normalized/PAXGUSDT/1h.parquet",
+      "file_size_bytes": 7946,
+      "checksum_sha256": "58501f67601f6b722391a45271138d82f9ec3bf36e7497c31ef777e8cfa4f3c7",
+      "quality_score": 100.0,
+      "updated_at": "2026-10-12T16:02:24.278238+00:00"
     }
   ]
 }

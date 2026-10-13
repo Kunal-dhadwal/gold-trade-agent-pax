@@ -21,7 +21,27 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.close()
 
 
+def validate_database_backend(url: str):
+    """Verify database backend against environment safety invariants.
+    
+    Production environment strictly requires PostgreSQL as the durable source of truth.
+    SQLite is permitted only for explicitly selected local development and automated tests.
+    """
+    is_sqlite = url.startswith("sqlite")
+    if settings.ENVIRONMENT.lower() in ("production", "prod") and is_sqlite:
+        raise RuntimeError(
+            "PRODUCTION DATABASE CONFIGURATION ERROR: Production environment strictly requires "
+            "PostgreSQL as durable source of truth. SQLite fallback is strictly prohibited."
+        )
+    if settings.LIVE_TRADING_ENABLED and is_sqlite:
+        raise RuntimeError(
+            "LIVE TRADING SAFETY INVARIANT BREACH: Live trading requires PostgreSQL backend. "
+            "SQLite is strictly prohibited for live execution."
+        )
+
+
 def get_engine_args(url: str):
+    validate_database_backend(url)
     args = {"echo": False}
     if url.startswith("sqlite"):
         args["connect_args"] = {"check_same_thread": False}
@@ -57,6 +77,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> None:
     """Initialize database tables and seed default instruments."""
+    validate_database_backend(settings.DATABASE_URL)
     logger.info(f"Initializing database tables with URL: {settings.DATABASE_URL.split('@')[-1]}")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

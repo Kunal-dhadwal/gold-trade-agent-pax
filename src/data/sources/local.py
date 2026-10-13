@@ -32,10 +32,22 @@ class LocalFileClient:
             raise ValueError(f"Unsupported file format: {path.suffix}")
 
         # Column standardization mapping
+        clean_cols = {c: str(c).strip().strip("<>").strip() for c in df.columns}
+        df = df.rename(columns=clean_cols)
+        lower_map = {c: str(c).lower() for c in df.columns}
+
+        # Check for separate Date and Time columns
+        date_col = next((c for c, l in lower_map.items() if l == "date"), None)
+        time_col = next((c for c, l in lower_map.items() if l == "time"), None)
+
+        if date_col and time_col:
+            df["timestamp"] = df[date_col].astype(str) + " " + df[time_col].astype(str)
+            df = df.drop(columns=[date_col, time_col])
+            lower_map = {c: str(c).lower() for c in df.columns}
+
         col_map = {}
-        for col in df.columns:
-            c_lower = col.strip().lower()
-            if c_lower in ("timestamp", "time", "date", "datetime"):
+        for col, c_lower in lower_map.items():
+            if c_lower in ("timestamp", "datetime", "gmt time", "local time", "open time", "date", "time"):
                 col_map[col] = "timestamp"
             elif c_lower in ("open", "o"):
                 col_map[col] = "open"
@@ -45,7 +57,7 @@ class LocalFileClient:
                 col_map[col] = "low"
             elif c_lower in ("close", "c"):
                 col_map[col] = "close"
-            elif c_lower in ("volume", "vol", "v"):
+            elif c_lower in ("volume", "vol", "v", "tick_volume", "tick volume"):
                 col_map[col] = "volume"
 
         df = df.rename(columns=col_map)
