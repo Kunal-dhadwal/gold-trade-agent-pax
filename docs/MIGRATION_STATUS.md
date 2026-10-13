@@ -70,4 +70,4 @@ For offline migration to the Windows laptop, all essential local files not track
 - [x] Phase 5: Bundle essential non-Git files into `migration_package_local_data.tar.gz`.
 - [x] Phase 6: Perform Windows compatibility audit (path separators, line endings, event loops).
 - [x] Phase 7: Document complete step-by-step setup in `docs/WINDOWS_MIGRATION_GUIDE.md`.
-- [ ] Phase 8: Commit and push branch `release1.1v` to GitHub remote.
+- [x] Phase 8: Commit (`40402d2`) and push branch `release1.1v` to GitHub remote (Verified).
